@@ -179,11 +179,31 @@ export const invoiceRouter = createTRPCRouter({
   create: publicProcedure
     .input(createInvoiceSchema)
     .mutation(async ({ ctx, input }) => {
+      // Debug logging
+      console.log('🔍 Invoice Create Debug:', {
+        customerId: input.customerId,
+        companyId: ctx.companyId,
+        customerIdType: typeof input.customerId,
+        companyIdType: typeof ctx.companyId
+      });
+
       // Get customer and company for tax calculations
       const [customer, company] = await Promise.all([
-        ctx.db.customer.findUnique({ where: { id: input.customerId } }),
+        ctx.db.customer.findUnique({
+          where: {
+            id: input.customerId,
+            companyId: ctx.companyId, // Company scoped security check
+          }
+        }),
         ctx.db.company.findUnique({ where: { id: ctx.companyId } }),
       ]);
+
+      console.log('🔍 Lookup Results:', {
+        customerFound: !!customer,
+        companyFound: !!company,
+        customerName: customer?.name,
+        companyName: company?.name
+      });
 
       if (!customer) {
         throw new TRPCError({

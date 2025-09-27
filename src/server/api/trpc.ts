@@ -37,10 +37,10 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
 };
 
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
-  // For now, we'll use a default company ID
+  // For now, we'll use a simple company ID
   // This will be replaced with proper authentication
   return createInnerTRPCContext({
-    companyId: 'default-company',
+    companyId: '001',
   });
 };
 

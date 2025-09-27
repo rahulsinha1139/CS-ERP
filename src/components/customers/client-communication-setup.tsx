@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { api } from '@/lib/trpc-client'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Input } from '../ui/input'
@@ -25,6 +24,8 @@ interface CommunicationPreferences {
   paymentReminders?: string
   reminderFrequency?: string
   quietHours?: { start: string; end: string }
+  invoiceDelivery?: string
+  complianceReminders?: string
 }
 
 interface ClientCommunicationSetupProps {
@@ -64,7 +65,7 @@ export default function ClientCommunicationSetup({
 
   // TODO: Implement when communication API is ready
   const updatePreferences = {
-    mutate: (data: CommunicationPreferences) => {
+    mutate: (_data: { customerId: string; preferences: CommunicationPreferences }) => {
       // Simulate API call
       setTimeout(() => {
         setStep(4) // Success step

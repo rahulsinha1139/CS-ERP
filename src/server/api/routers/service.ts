@@ -8,12 +8,12 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 
 export const serviceRouter = createTRPCRouter({
   // Get all service templates
-  getAll: publicProcedure.query(async ({ ctx }) => {
+  getAll: publicProcedure.query(async ({ ctx: _ctx }) => {
     return [];
   }),
 
   // Get service templates (alias for getAll for backward compatibility)
-  getTemplates: publicProcedure.query(async ({ ctx }) => {
+  getTemplates: publicProcedure.query(async ({ ctx: _ctx }) => {
     // Professional CS service templates
     return [
       {
@@ -67,7 +67,7 @@ export const serviceRouter = createTRPCRouter({
   // Get service by ID
   getById: publicProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx: _ctx, input }) => {
       // Professional CS service templates (avoiding circular reference)
       const templates = [
         { id: 1, name: "ROC Annual Filing", description: "Annual filing for registrar of companies", baseAmount: 2500, gstRate: 18, hsn: "9983", category: "compliance" },
@@ -89,7 +89,7 @@ export const serviceRouter = createTRPCRouter({
       hsn: z.string(),
       category: z.string()
     }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       // In production, this would save to database
       return {
         id: Math.floor(Math.random() * 1000),

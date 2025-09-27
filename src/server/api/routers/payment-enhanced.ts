@@ -18,7 +18,6 @@ import {
   type BankStatementEntry,
   PaymentMethod,
   PaymentStatus,
-  ReconciliationStatus,
 } from "../../../lib/payment-reconciliation-engine";
 
 // Input validation schemas
@@ -84,7 +83,7 @@ export const enhancedPaymentRouter = createTRPCRouter({
     .input(createPaymentSchema)
     .mutation(async ({ ctx, input }) => {
       const { companyId } = ctx;
-      const { invoiceId, amount, paymentDate, method, reference, notes, bankReference, upiTransactionId, processingFee } = input;
+      const { invoiceId, amount, paymentDate, method, reference, notes, bankReference: _bankReference, upiTransactionId: _upiTransactionId, processingFee } = input;
 
       try {
         // Validate invoice exists and belongs to company
@@ -188,8 +187,8 @@ export const enhancedPaymentRouter = createTRPCRouter({
   bulkCreatePayments: companyProcedure
     .input(bulkCreatePaymentsSchema)
     .mutation(async ({ ctx, input }) => {
-      const { companyId } = ctx;
-      const { payments, validateDuplicates } = input;
+      const { companyId: _companyId } = ctx;
+      const { payments, validateDuplicates: _validateDuplicates } = input;
 
       try {
         const results: Array<any> = [];
@@ -415,7 +414,7 @@ export const enhancedPaymentRouter = createTRPCRouter({
     .input(paymentAnalyticsSchema)
     .query(async ({ ctx, input }) => {
       const { companyId } = ctx;
-      const { startDate, endDate, customerId, paymentMethod, includeProjections } = input;
+      const { startDate, endDate, customerId, paymentMethod, includeProjections: _includeProjections } = input;
 
       try {
         // Build where clause for filtering

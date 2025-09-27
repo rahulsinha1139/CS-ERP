@@ -12,7 +12,7 @@ datasource db {
 
 // Core business entities for Company Secretary ERP
 model Company {
-  id              String   @id @default(cuid())
+  id              String   @id
   name            String
   email           String   @unique
   phone           String?
@@ -47,7 +47,7 @@ model Company {
 }
 
 model User {
-  id              String   @id @default(cuid())
+  id              String   @id
   email           String   @unique
   name            String?
   role            UserRole @default(USER)
@@ -64,7 +64,7 @@ model User {
 }
 
 model Customer {
-  id              String   @id @default(cuid())
+  id              String   @id
   name            String
   email           String?
   phone           String?
@@ -103,7 +103,7 @@ model Customer {
 }
 
 model ServiceTemplate {
-  id              String   @id @default(cuid())
+  id              String   @id
   name            String
   description     String?
   defaultRate     Float
@@ -125,7 +125,7 @@ model ServiceTemplate {
 }
 
 model Invoice {
-  id              String        @id @default(cuid())
+  id              String        @id
   number          String        @unique
   status          InvoiceStatus @default(DRAFT)
   issueDate       DateTime
@@ -161,7 +161,7 @@ model Invoice {
 }
 
 model InvoiceLine {
-  id              String   @id @default(cuid())
+  id              String   @id
   invoiceId       String
   description     String
   quantity        Float
@@ -180,7 +180,7 @@ model InvoiceLine {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
+  id              String        @id
   invoiceId       String
   customerId      String
   companyId       String
@@ -204,7 +204,7 @@ model Payment {
 }
 
 model RecurringContract {
-  id                String          @id @default(cuid())
+  id                String          @id
   customerId        String
   serviceTemplateId String?
   companyId         String
@@ -243,7 +243,7 @@ model RecurringContract {
 }
 
 model ComplianceItem {
-  id              String   @id @default(cuid())
+  id              String   @id
   companyId       String
   customerId      String?
   title           String
@@ -291,7 +291,7 @@ model ComplianceItem {
 }
 
 model ComplianceTemplate {
-  id              String   @id @default(cuid())
+  id              String   @id
   companyId       String
   title           String
   description     String?
@@ -328,7 +328,7 @@ model ComplianceTemplate {
 }
 
 model ComplianceActivity {
-  id              String   @id @default(cuid())
+  id              String   @id
   complianceId    String
   activityType    ActivityType
   description     String
@@ -348,7 +348,7 @@ model ComplianceActivity {
 }
 
 model ComplianceAlert {
-  id              String   @id @default(cuid())
+  id              String   @id
   companyId       String
   complianceId    String
   alertType       AlertType
@@ -371,7 +371,7 @@ model ComplianceAlert {
 }
 
 model Document {
-  id              String   @id @default(cuid())
+  id              String   @id
   companyId       String
   customerId      String?
   filename        String
@@ -396,7 +396,7 @@ model Document {
 }
 
 model Communication {
-  id              String   @id @default(cuid())
+  id              String   @id
   customerId      String
   type            CommunicationType
   subject         String?
@@ -550,7 +550,7 @@ enum AlertType {
 // ====== COMMUNICATION SYSTEM MODELS ======
 
 model CompanySettings {
-  id              String   @id @default(cuid())
+  id              String   @id
   companyId       String   @unique
 
   // Email Configuration
@@ -589,7 +589,7 @@ model CompanySettings {
 }
 
 model CommunicationPreference {
-  id              String   @id @default(cuid())
+  id              String   @id
   customerId      String   @unique
 
   // Client Communication Preferences
@@ -623,7 +623,7 @@ model CommunicationPreference {
 }
 
 model CommunicationLog {
-  id              String   @id @default(cuid())
+  id              String   @id
   customerId      String
   companyId       String
 
@@ -666,7 +666,7 @@ model CommunicationLog {
 }
 
 model MessageTemplate {
-  id              String   @id @default(cuid())
+  id              String   @id
   companyId       String
 
   // Template details

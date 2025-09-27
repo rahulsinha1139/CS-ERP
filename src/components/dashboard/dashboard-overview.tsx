@@ -69,22 +69,24 @@ interface QuickStats {
   pendingTasks: number;
 }
 
+// Proper Prisma-aligned interfaces
 interface ApiInvoice {
-  number?: string;
   id: string;
-  customer?: { name: string };
-  grandTotal?: number;
-  status?: string;
-  dueDate?: string;
-  paidDate?: string;
+  number: string;
+  status: 'DRAFT' | 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'CANCELLED';
+  grandTotal: number;
+  dueDate: Date | null;
+  paidAmount: number;
+  customer: { name: string } | null;
 }
 
 interface ApiCompliance {
+  id: string;
   title?: string;
   complianceType?: string;
-  customer?: { name: string };
-  dueDate?: string;
-  priority?: string;
+  dueDate: Date | null;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  customer: { name: string } | null;
 }
 
 interface DashboardData {
@@ -125,19 +127,32 @@ const useDashboardData = () => {
     recentInvoices: (recentInvoicesData?.invoices || []).map((invoice: ApiInvoice) => ({
       id: invoice.number || invoice.id,
       client: invoice.customer?.name || 'Unknown Client',
-      amount: invoice.grandTotal || 0,
-      status: invoice.status?.toLowerCase() || 'draft',
-      dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : undefined,
-      paidDate: invoice.paidDate ? new Date(invoice.paidDate).toISOString().split('T')[0] : undefined,
-      isOverdue: invoice.status === 'OVERDUE' || (invoice.dueDate && new Date(invoice.dueDate) < new Date())
+      amount: invoice.grandTotal,
+      status: ({
+        'DRAFT': 'draft',
+        'SENT': 'pending',
+        'PAID': 'paid',
+        'PARTIALLY_PAID': 'pending',
+        'OVERDUE': 'overdue',
+        'CANCELLED': 'draft'
+      }[invoice.status] || 'draft') as 'pending' | 'paid' | 'overdue' | 'draft',
+      dueDate: invoice.dueDate ? invoice.dueDate.toISOString().split('T')[0] : undefined,
+      paidDate: invoice.paidAmount > 0 && invoice.status === 'PAID'
+        ? new Date().toISOString().split('T')[0] : undefined,
+      isOverdue: invoice.status === 'OVERDUE'
     })),
     upcomingDeadlines: (upcomingDeadlinesData?.compliances || []).map((deadline: ApiCompliance, index: number) => ({
       id: index + 1,
       title: deadline.title || deadline.complianceType || 'Compliance Task',
       client: deadline.customer?.name || 'Unknown Client',
-      dueDate: deadline.dueDate ? new Date(deadline.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      priority: deadline.priority?.toLowerCase() || 'medium',
-      daysLeft: deadline.dueDate ? Math.ceil((new Date(deadline.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
+      dueDate: deadline.dueDate ? deadline.dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      priority: ({
+        'LOW': 'low',
+        'MEDIUM': 'medium',
+        'HIGH': 'high',
+        'CRITICAL': 'high'
+      }[deadline.priority] || 'medium') as 'high' | 'medium' | 'low',
+      daysLeft: deadline.dueDate ? Math.ceil((deadline.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
     })),
     quickStats: {
       totalClients: dashboardMetrics?.customers?.new || 0,

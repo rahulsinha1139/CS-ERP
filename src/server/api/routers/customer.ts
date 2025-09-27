@@ -346,6 +346,11 @@ export const customerRouter = createTRPCRouter({
         });
       }
 
+      console.log('🔍 Customer.getList Debug:', {
+        companyId: ctx.companyId,
+        companyIdType: typeof ctx.companyId
+      });
+
       const customers = await ctx.db.customer.findMany({
         where: { companyId: ctx.companyId },
         select: {
@@ -356,6 +361,11 @@ export const customerRouter = createTRPCRouter({
           stateCode: true,
         },
         orderBy: { name: 'asc' },
+      });
+
+      console.log('🔍 Customer.getList Results:', {
+        count: customers.length,
+        customers: customers.map(c => ({ id: c.id, name: c.name }))
       });
 
       return customers;

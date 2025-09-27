@@ -5,7 +5,7 @@
 
 import { createTRPCRouter } from "./trpc";
 import { invoiceRouter } from "./routers/invoice";
-import { customerMockRouter as customerRouter } from "./routers/customer-mock";
+import { customerRouter } from "./routers/customer";
 import { paymentRouter } from "./routers/payment";
 import { companyRouter } from "./routers/company";
 import { serviceRouter } from "./routers/service";

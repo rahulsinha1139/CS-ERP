@@ -36,14 +36,48 @@ const invoiceFormSchema = z.object({
 
 type InvoiceFormData = z.infer<typeof invoiceFormSchema>;
 
+interface InvoiceResult {
+  id: string;
+  number: string;
+  customerId: string;
+  status: string;
+  total: number;
+}
+
+interface CalculationResult {
+  taxableValue: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  totalTax: number;
+  grandTotal: number;
+  isInterstate: boolean;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  email?: string;
+  gstin?: string;
+  state?: string;
+}
+
+interface ServiceTemplate {
+  id: string;
+  name: string;
+  baseAmount: number;
+  gstRate: number;
+  hsnSac?: string;
+}
+
 interface InvoiceFormProps {
   invoiceId?: string;
-  onSuccess?: (invoice: any) => void;
+  onSuccess?: (invoice: InvoiceResult) => void;
   onCancel?: () => void;
 }
 
 function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
-  const [calculationResults, setCalculationResults] = useState<any[]>([]);
+  const [calculationResults, setCalculationResults] = useState<CalculationResult[]>([]);
   const [invoiceTotals, setInvoiceTotals] = useState({
     subtotal: 0,
     taxableValue: 0,
@@ -92,7 +126,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
 
   // Get customer for calculations
   const selectedCustomerId = form.watch('customerId');
-  const selectedCustomer = customers?.find((c: any) => c.id === selectedCustomerId);
+  const selectedCustomer = customers?.find((c: Customer) => c.id === selectedCustomerId);
 
   // Watch form values for real-time calculations
   const watchedLines = form.watch('lines');
@@ -150,13 +184,13 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
 
   // Mutations
   const createInvoiceMutation = (api as any).invoice.create.useMutation({
-    onSuccess: (data: any) => {
+    onSuccess: (data: InvoiceResult) => {
       onSuccess?.(data);
     },
   });
 
   const updateInvoiceMutation = (api as any).invoice.update.useMutation({
-    onSuccess: (data: any) => {
+    onSuccess: (data: InvoiceResult) => {
       onSuccess?.(data);
     },
   });
@@ -200,7 +234,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
   };
 
   const fillFromTemplate = (lineIndex: number, templateId: string) => {
-    const template = serviceTemplates?.find((t: any) => t.id === templateId);
+    const template = serviceTemplates?.find((t: ServiceTemplate) => t.id === templateId);
     if (template) {
       form.setValue(`lines.${lineIndex}.description`, template.name);
       form.setValue(`lines.${lineIndex}.rate`, template.defaultRate);
@@ -226,7 +260,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Customer</option>
-                {customers?.map((customer: any) => (
+                {customers?.map((customer: Customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name} {customer.gstin && `(${customer.gstin})`}
                   </option>
@@ -312,7 +346,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
                       className="w-full p-2 border border-gray-300 rounded-lg"
                     >
                       <option value="">Select Template</option>
-                      {serviceTemplates?.map((template: any) => (
+                      {serviceTemplates?.map((template: ServiceTemplate) => (
                         <option key={template.id} value={template.id}>
                           {template.name}
                         </option>

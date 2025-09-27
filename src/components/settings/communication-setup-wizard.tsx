@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { api } from '@/lib/trpc-client'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Input } from '../ui/input'
