@@ -1,0 +1,97 @@
+{
+  "timestamp": "2025-09-25T15:34:00.072Z",
+  "summary": {
+    "totalTests": 13,
+    "passedTests": 11,
+    "failedTests": 2,
+    "successRate": 84.6
+  },
+  "workflowResults": [
+    true,
+    false,
+    true,
+    true,
+    false
+  ],
+  "testResults": [
+    {
+      "testName": "Invoice List Fetch",
+      "status": "FAIL",
+      "message": "HTTP 400",
+      "duration": null
+    },
+    {
+      "testName": "Page: Invoices List",
+      "status": "PASS",
+      "message": "Loaded successfully (Slow)",
+      "duration": 3761
+    },
+    {
+      "testName": "Payment List Fetch",
+      "status": "PASS",
+      "message": "Fetched payments successfully",
+      "duration": 4851
+    },
+    {
+      "testName": "Data: Customer Data",
+      "status": "PASS",
+      "message": "Data structure consistent",
+      "duration": null
+    },
+    {
+      "testName": "Customer List Fetch",
+      "status": "PASS",
+      "message": "Fetched customers successfully",
+      "duration": 4936
+    },
+    {
+      "testName": "Data: Invoice Data",
+      "status": "FAIL",
+      "message": "Data structure issues",
+      "duration": null
+    },
+    {
+      "testName": "Customer Dropdown",
+      "status": "PASS",
+      "message": "Customer dropdown data available",
+      "duration": null
+    },
+    {
+      "testName": "Payment Statistics",
+      "status": "PASS",
+      "message": "Payment stats calculated successfully",
+      "duration": null
+    },
+    {
+      "testName": "Page: New Invoice Form",
+      "status": "PASS",
+      "message": "Loaded successfully (Slow)",
+      "duration": 4549
+    },
+    {
+      "testName": "Data: Payment Data",
+      "status": "PASS",
+      "message": "Data structure consistent",
+      "duration": null
+    },
+    {
+      "testName": "Recent Payments",
+      "status": "PASS",
+      "message": "Recent payments list available",
+      "duration": null
+    },
+    {
+      "testName": "Page: New Payment Form",
+      "status": "PASS",
+      "message": "Loaded successfully (Slow)",
+      "duration": 2063
+    },
+    {
+      "testName": "Page: Customers List",
+      "status": "PASS",
+      "message": "Loaded successfully (Good)",
+      "duration": 1262
+    }
+  ],
+  "totalTime": "11714ms"
+}

@@ -1,0 +1,79 @@
+{
+  "timestamp": "2025-09-25T18:21:36.472Z",
+  "summary": {
+    "totalTests": 10,
+    "passedTests": 0,
+    "failedTests": 10,
+    "successRate": 0
+  },
+  "workflowResults": [
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "testResults": [
+    {
+      "testName": "Invoice Workflow",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Payment Workflow",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Page: Invoices List",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Data: Customer Data",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Customer Workflow",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Page: New Invoice Form",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Data: Invoice Data",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Page: New Payment Form",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Data: Payment Data",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    },
+    {
+      "testName": "Page: Customers List",
+      "status": "FAIL",
+      "message": "",
+      "duration": null
+    }
+  ],
+  "totalTime": "171ms"
+}
