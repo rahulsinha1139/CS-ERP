@@ -69,6 +69,24 @@ interface QuickStats {
   pendingTasks: number;
 }
 
+interface ApiInvoice {
+  number?: string;
+  id: string;
+  customer?: { name: string };
+  grandTotal?: number;
+  status?: string;
+  dueDate?: string;
+  paidDate?: string;
+}
+
+interface ApiCompliance {
+  title?: string;
+  complianceType?: string;
+  customer?: { name: string };
+  dueDate?: string;
+  priority?: string;
+}
+
 interface DashboardData {
   metrics: DashboardMetrics;
   recentInvoices: Invoice[];
@@ -104,7 +122,7 @@ const useDashboardData = () => {
       customers: { new: 0 },
       compliance: { total: 0, pending: 0, overdue: 0 }
     },
-    recentInvoices: (recentInvoicesData?.invoices || []).map((invoice: any) => ({
+    recentInvoices: (recentInvoicesData?.invoices || []).map((invoice: ApiInvoice) => ({
       id: invoice.number || invoice.id,
       client: invoice.customer?.name || 'Unknown Client',
       amount: invoice.grandTotal || 0,
@@ -113,7 +131,7 @@ const useDashboardData = () => {
       paidDate: invoice.paidDate ? new Date(invoice.paidDate).toISOString().split('T')[0] : undefined,
       isOverdue: invoice.status === 'OVERDUE' || (invoice.dueDate && new Date(invoice.dueDate) < new Date())
     })),
-    upcomingDeadlines: (upcomingDeadlinesData?.compliances || []).map((deadline: any, index: number) => ({
+    upcomingDeadlines: (upcomingDeadlinesData?.compliances || []).map((deadline: ApiCompliance, index: number) => ({
       id: index + 1,
       title: deadline.title || deadline.complianceType || 'Compliance Task',
       client: deadline.customer?.name || 'Unknown Client',

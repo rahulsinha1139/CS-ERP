@@ -12,10 +12,25 @@ import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { Alert } from '../ui/alert'
 
+interface CommunicationPreferences {
+  email?: string
+  phone?: string
+  whatsappNumber?: string
+  emailOptIn?: boolean
+  whatsappOptIn?: boolean
+  smsOptIn?: boolean
+  language?: string
+  timezone?: string
+  preferredLanguage?: string
+  paymentReminders?: string
+  reminderFrequency?: string
+  quietHours?: { start: string; end: string }
+}
+
 interface ClientCommunicationSetupProps {
   customerId: string
   customerName: string
-  currentPreferences?: any
+  currentPreferences?: CommunicationPreferences
   onComplete?: () => void
 }
 
@@ -49,7 +64,7 @@ export default function ClientCommunicationSetup({
 
   // TODO: Implement when communication API is ready
   const updatePreferences = {
-    mutate: (data: any) => {
+    mutate: (data: CommunicationPreferences) => {
       // Simulate API call
       setTimeout(() => {
         setStep(4) // Success step
@@ -63,7 +78,7 @@ export default function ClientCommunicationSetup({
   const emailOptIn = watch('emailOptIn')
   const whatsappOptIn = watch('whatsappOptIn')
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: CommunicationPreferences) => {
     updatePreferences.mutate({
       customerId,
       preferences: data
