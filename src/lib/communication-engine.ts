@@ -1,6 +1,7 @@
 /**
  * Professional Communication Engine with Resend & WhatsApp
- * Optimized using Asymm mathematical principles
+ * Optimized for Mrs. Pragnya Pradhan's CS Practice
+ * Single-user focus with expansion-ready architecture
  */
 
 import { Resend } from 'resend'

@@ -8,6 +8,7 @@ import { useRouter } from 'next/router'
 import { api } from '@/lib/trpc-client'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
+import CustomerForm from './customer-form'
 import {
   ArrowLeft,
   User,
@@ -35,15 +36,22 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
   const router = useRouter()
   const [invoiceFilter, _setInvoiceFilter] = useState<'ALL' | 'PAID' | 'UNPAID' | 'OVERDUE' | 'PARTIALLY_PAID'>('ALL')
 
-  // Fetch customer details
+  // Check if this is a new customer creation
+  const isNewCustomer = customerId === 'new'
+
+  // Fetch customer details (only if not creating new)
   const { data: customer, isLoading, error } = api.customer.getById.useQuery({
     id: customerId,
+  }, {
+    enabled: !isNewCustomer, // Only fetch if not creating new customer
   })
 
-  // Fetch filtered invoices
+  // Fetch filtered invoices (only if not creating new)
   const { data: _invoices = [] } = api.customer.getInvoices.useQuery({
     customerId,
     status: invoiceFilter,
+  }, {
+    enabled: !isNewCustomer, // Only fetch if not creating new customer
   })
 
   // Format currency
@@ -85,6 +93,41 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
             <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl h-96"></div>
             <div className="lg:col-span-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl h-96"></div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Handle new customer creation
+  if (isNewCustomer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-6 mb-8">
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={onBack}
+              className="bg-white/80 backdrop-blur-sm hover:bg-white/90 border-0 shadow-lg rounded-2xl transition-all duration-300 hover:scale-105"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                Create New Customer
+              </h1>
+              <p className="text-slate-600 mt-2">Add a new customer to your database</p>
+            </div>
+          </div>
+
+          {/* Customer Creation Form */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-2xl rounded-3xl p-8">
+            <CustomerForm
+              onCancel={onBack}
+              onSuccess={() => router.push('/customers')}
+            />
+          </Card>
         </div>
       </div>
     )

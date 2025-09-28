@@ -20,7 +20,17 @@ const nextConfig = {
 
   // Experimental optimizations
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-slot'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-slot', '@tanstack/react-query', '@trpc/client'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+    // Enable faster dev builds
+    forceSwcTransforms: true,
   },
 
   // Image optimization
@@ -62,10 +72,48 @@ const nextConfig = {
       config.watchOptions = {
         poll: 1000,
         aggregateTimeout: 300,
+        ignored: /node_modules/,
       };
 
       // Optimize module resolution
       config.resolve.symlinks = false;
+
+      // Speed up development builds
+      config.cache = {
+        type: 'filesystem',
+        buildDependencies: {
+          config: [import.meta.url],
+        },
+      };
+
+      // Reduce TypeScript checking in dev
+      config.optimization = {
+        ...config.optimization,
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Split vendor chunks for faster rebuilds
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20
+            },
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true
+            }
+          }
+        }
+      };
     }
 
     return config;

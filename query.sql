@@ -1,0 +1,1 @@
+SELECT id, number FROM invoices ORDER BY id;

@@ -229,9 +229,36 @@ export const invoiceRouter = createTRPCRouter({
       // Generate invoice number
       const invoiceNumber = generateInvoiceNumber('INV', input.issueDate.getFullYear());
 
+      // Generate next invoice ID in simple format (001, 002, 003...)
+      const lastInvoice = await ctx.db.invoice.findFirst({
+        orderBy: { id: 'desc' },
+        select: { id: true }
+      });
+
+      const nextIdNumber = lastInvoice
+        ? parseInt(lastInvoice.id) + 1
+        : 1;
+      const nextId = nextIdNumber.toString().padStart(3, '0');
+
+      console.log('🔍 ID Generation Debug:', {
+        lastInvoice,
+        nextIdNumber,
+        nextId,
+        nextIdType: typeof nextId
+      });
+
+      // Validate ID generation
+      if (!nextId || typeof nextId !== 'string' || nextId.trim() === '') {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to generate invoice ID. nextId: ${nextId}`,
+        });
+      }
+
       // Create invoice with lines
       const invoice = await ctx.db.invoice.create({
         data: {
+          id: nextId,
           number: invoiceNumber,
           customerId: input.customerId,
           companyId: ctx.companyId!,
