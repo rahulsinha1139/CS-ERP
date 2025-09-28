@@ -139,7 +139,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
       return;
     }
 
-    const results = watchedLines.map((line, index) => {
+    const results = watchedLines.map((line, _index) => {
       if (!line.description || !line.quantity || line.rate === undefined) {
         return {
           taxableValue: 0,

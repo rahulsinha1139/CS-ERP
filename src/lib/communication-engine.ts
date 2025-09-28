@@ -420,7 +420,7 @@ export class CommunicationEngine {
     return this.templates.get(templateId) || null
   }
 
-  async renderTemplate(templateId: string, data: Record<string, any>): Promise<{
+  async renderTemplate(templateId: string, data: Record<string, unknown>): Promise<{
     subject: string
     htmlContent: string
     textContent: string

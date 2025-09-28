@@ -55,12 +55,12 @@ const getCurrentCompanyData = () => {
 
 export const companyRouter = createTRPCRouter({
   // Get all companies
-  getAll: publicProcedure.query(async ({ ctx }) => {
+  getAll: publicProcedure.query(async () => {
     return [];
   }),
 
   // Get current company (for CS practice)
-  getCurrent: publicProcedure.query(async ({ ctx }) => {
+  getCurrent: publicProcedure.query(async () => {
     return getCurrentCompanyData();
   }),
 
@@ -96,7 +96,7 @@ export const companyRouter = createTRPCRouter({
     }),
 
   // Get company settings
-  getSettings: publicProcedure.query(async ({ ctx }) => {
+  getSettings: publicProcedure.query(async () => {
     const company = getCurrentCompanyData();
     return company.settings;
   }),
@@ -122,7 +122,7 @@ export const companyRouter = createTRPCRouter({
     }),
 
   // Get company branding
-  getBranding: publicProcedure.query(async ({ ctx }) => {
+  getBranding: publicProcedure.query(async () => {
     const company = getCurrentCompanyData();
     return company.branding;
   })
