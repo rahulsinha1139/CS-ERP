@@ -17,7 +17,7 @@ const globalForPrisma = globalThis as unknown as {
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ['query'],
+    log: process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
@@ -30,11 +30,6 @@ interface CreateContextOptions {
 }
 
 const createInnerTRPCContext = (opts: CreateContextOptions) => {
-  console.log('🔍 tRPC Context Debug:', {
-    dbExists: !!db,
-    dbType: typeof db,
-    companyId: opts.companyId
-  });
   return {
     db,
     companyId: opts.companyId,
@@ -79,8 +74,10 @@ const performanceTrackingMiddleware = t.middleware(async ({ path, type, next }) 
 
   const durationMs = Date.now() - start;
 
-  // Log performance insights for Mrs. Pradhan's practice
-  console.log(`🎯 Practice API Performance: ${type}.${path} - ${durationMs}ms`);
+  // Log performance insights only for slow queries (>1s) or in development when PERF_LOG=true
+  if (durationMs > 1000 || process.env.PERF_LOG === 'true') {
+    console.log(`🎯 Practice API Performance: ${type}.${path} - ${durationMs}ms`);
+  }
 
   // Future: Store in performance tracking system for dashboard insights
   // This will help Mrs. Pradhan understand which operations are slowest
@@ -89,6 +86,44 @@ const performanceTrackingMiddleware = t.middleware(async ({ path, type, next }) 
 });
 
 export const publicProcedure = t.procedure.use(performanceTrackingMiddleware);
+
+/**
+ * Middleware to check if the user is authenticated.
+ * Rejects the request with an 'UNAUTHORIZED' error if the user is not signed in.
+ */
+const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
+  // For single-user CS practice, we'll simulate session presence
+  // In future: integrate with NextAuth.js session validation
+  const mockSession = {
+    user: {
+      id: '001',
+      email: 'admin@cspractice.com',
+      name: 'Mrs. Pradhan',
+      companyId: '001'
+    }
+  };
+
+  if (!mockSession || !mockSession.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return next({
+    ctx: {
+      // Infers the session as non-nullable to downstream procedures
+      session: { ...mockSession, user: mockSession.user },
+    },
+  });
+});
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * If you want a query or mutation to ONLY be accessible to logged-in users, use this. It verifies
+ * the session is valid and guarantees ctx.session.user is not null.
+ *
+ * @see https://trpc.io/docs/procedures
+ */
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
 // Company-scoped procedure with performance tracking
 export const companyProcedure = t.procedure

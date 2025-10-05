@@ -5,6 +5,11 @@
 
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 
+// Type definitions for performance utilities
+type ThrottledFunction<T extends (...args: unknown[]) => unknown> = T;
+type FormFieldValue = string | number | boolean | Date | null | undefined;
+type VirtualScrollItem = Record<string, unknown>;
+
 // Debounce hook for search inputs
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -23,32 +28,32 @@ export function useDebounce<T>(value: T, delay: number): T {
 }
 
 // Throttle hook for scroll/resize events
-export function useThrottle<T extends (...args: any[]) => any>(
+export function useThrottle<T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number
-): T {
+): ThrottledFunction<T> {
   const lastCall = useRef<number>(0);
 
-  return useCallback((...args: any[]) => {
+  return useCallback((...args: Parameters<T>) => {
     const now = Date.now();
     if (now - lastCall.current >= delay) {
       lastCall.current = now;
       return callback(...args);
     }
-  }, [callback, delay]) as T;
+  }, [callback, delay]) as ThrottledFunction<T>;
 }
 
 // Memoized calculation hook
 export function useMemoizedCalculation<T>(
   calculateFn: () => T,
-  dependencies: any[]
+  dependencies: readonly unknown[]
 ): T {
   return useMemo(calculateFn, [calculateFn, ...dependencies]);
 }
 
 // Virtual scrolling hook for large lists
-export function useVirtualScrolling(
-  items: any[],
+export function useVirtualScrolling<T = VirtualScrollItem>(
+  items: T[],
   itemHeight: number,
   containerHeight: number
 ) {
@@ -89,7 +94,7 @@ export function useOptimizedForm<T>(
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const setValue = useCallback(
-    (field: keyof T, value: any) => {
+    (field: keyof T, value: FormFieldValue) => {
       setValues(prev => ({
         ...prev,
         [field]: value,

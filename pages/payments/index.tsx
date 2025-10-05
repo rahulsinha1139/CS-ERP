@@ -4,75 +4,100 @@
  */
 
 import React, { useState } from 'react';
-import { api } from '../../src/lib/trpc-client';
-import { useAppStore } from '../../src/store/app-store';
-import PaymentTracker from '../../src/components/payments/payment-tracker';
-import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
-import { Button } from '../../src/components/ui/button';
-import { formatCurrency, formatDate } from '../../src/lib/utils';
-import { DollarSign, TrendingUp, Clock, AlertCircle, Download, Filter } from 'lucide-react';
+import Head from 'next/head';
+import { api } from "@/utils/api";
+import { AuraLayout } from '@/components/ui/aura-layout';
+import PaymentTracker from '@/components/payments/payment-tracker';
+import { AuraCard, AuraCardContent } from '@/components/ui/aura-card';
+import { AuraButton } from '@/components/ui/aura-button';
+import { AuraSelect } from '@/components/ui/aura-select';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { DollarSign, Clock, AlertCircle, Download, Filter } from 'lucide-react';
 
 export default function PaymentsPage() {
-  const [filters, setFilters] = useState({
-    status: '',
-    method: '',
-    fromDate: '',
-    toDate: '',
-  });
+  // Filters will be implemented in future enhancement
+  // const [filters, setFilters] = useState({
+  //   status: '',
+  //   method: '',
+  //   fromDate: '',
+  //   toDate: '',
+  // });
   const [dateRange, setDateRange] = useState('thisMonth');
 
-  const { data: paymentStats, isLoading: statsLoading } = (api as any).payment.getStats.useQuery({
+  const { data: paymentStats, isLoading: statsLoading } = api.payment.getStats.useQuery({
     dateRange,
   });
 
-  const { data: recentPayments } = (api as any).payment.getRecent.useQuery({
+  const { data: recentPayments } = api.payment.getRecent.useQuery({
     limit: 10,
   });
 
-  const { data: overdueInvoices } = (api as any).invoice.getOverdue.useQuery({});
+  const { data: overdueInvoices } = api.invoice.getOverdue.useQuery({});
 
   const handleExportPayments = () => {
     // This would trigger an export functionality
     console.log('Exporting payments...');
   };
 
+  const breadcrumbs = [
+    { label: "Dashboard", href: "/" },
+    { label: "Payments" }
+  ];
+
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <AuraButton variant="secondary" onClick={handleExportPayments} icon={<Download className="h-4 w-4" />}>
+        Export
+      </AuraButton>
+      <AuraButton variant="secondary" icon={<Filter className="h-4 w-4" />}>
+        Advanced Filters
+      </AuraButton>
+    </div>
+  );
+
   if (statsLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <AuraLayout
+        title="Payment Management"
+        subtitle="Track payments, reconcile accounts, and manage cash flow"
+        breadcrumbs={breadcrumbs}
+        headerActions={headerActions}
+        userEmail="Mrs. Pragnya Pradhan"
+        userName="pragnya@pradhanassociates.com"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </AuraLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payment Management</h1>
-          <p className="text-gray-600">Track payments, reconcile accounts, and manage cash flow</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExportPayments} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Advanced Filters
-          </Button>
-        </div>
-      </div>
+    <>
+      <Head>
+        <title>Payments - CS ERP Professional Suite</title>
+        <meta name="description" content="Track payments and reconcile accounts" />
+      </Head>
+
+      <AuraLayout
+        title="Payment Management"
+        subtitle="Track payments, reconcile accounts, and manage cash flow for Mrs. Pragnya Pradhan's CS practice"
+        breadcrumbs={breadcrumbs}
+        headerActions={headerActions}
+        userEmail="Mrs. Pragnya Pradhan"
+        userName="pragnya@pradhanassociates.com"
+      >
+        <div className="space-y-6">
 
       {/* Date Range Selector */}
-      <Card>
-        <CardContent className="p-6">
+      <AuraCard>
+        <AuraCardContent className="p-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-600">Period:</label>
-            <select
+            <AuraSelect
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              label="Period"
+              icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
             >
               <option value="today">Today</option>
               <option value="thisWeek">This Week</option>
@@ -81,16 +106,16 @@ export default function PaymentsPage() {
               <option value="thisQuarter">This Quarter</option>
               <option value="thisYear">This Year</option>
               <option value="all">All Time</option>
-            </select>
+            </AuraSelect>
           </div>
-        </CardContent>
-      </Card>
+        </AuraCardContent>
+      </AuraCard>
 
       {/* Payment Statistics */}
       {paymentStats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Received</p>
@@ -103,11 +128,11 @@ export default function PaymentsPage() {
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
 
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Outstanding</p>
@@ -120,11 +145,11 @@ export default function PaymentsPage() {
                 </div>
                 <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
 
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Average Collection</p>
@@ -137,38 +162,21 @@ export default function PaymentsPage() {
                 </div>
                 <Clock className="h-8 w-8 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Growth Rate</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {paymentStats.growthRate > 0 ? '+' : ''}{paymentStats.growthRate.toFixed(1)}%
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    vs last period
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+
         </div>
       )}
 
       {/* Quick Overview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Payments */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Payments</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <AuraCard>
+          <AuraCardContent className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Payments</h3>
             <div className="space-y-3">
-              {recentPayments?.map((payment: any) => (
+              {recentPayments?.map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium">{payment.invoice.customer.name}</p>
@@ -186,20 +194,18 @@ export default function PaymentsPage() {
                 <p className="text-gray-500 text-center py-4">No recent payments</p>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Overdue Invoices */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <AuraCard>
+          <AuraCardContent className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-600" />
               Overdue Invoices
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h3>
             <div className="space-y-3">
-              {overdueInvoices?.map((invoice: any) => (
+              {overdueInvoices?.map((invoice) => (
                 <div key={invoice.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                   <div>
                     <p className="font-medium">{invoice.customer.name}</p>
@@ -219,12 +225,14 @@ export default function PaymentsPage() {
                 <p className="text-gray-500 text-center py-4">No overdue invoices</p>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
       </div>
 
       {/* Main Payment Tracker */}
       <PaymentTracker />
-    </div>
+        </div>
+      </AuraLayout>
+    </>
   );
 }

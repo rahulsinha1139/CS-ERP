@@ -78,6 +78,15 @@ export interface PaymentData {
   notes?: string;
 }
 
+// Context interfaces for state transitions
+export interface StateTransitionContext {
+  payment?: PaymentData;
+  notes?: string;
+  timestamp?: Date;
+  userId?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export class InvoiceEngine {
   private static instance: InvoiceEngine;
 
@@ -163,7 +172,7 @@ export class InvoiceEngine {
   transitionState(
     invoice: CalculatedInvoice,
     newState: InvoiceState,
-    context?: any
+    context?: StateTransitionContext
   ): CalculatedInvoice {
     if (!this.canTransitionTo(invoice.state, newState)) {
       throw new Error(
@@ -303,7 +312,7 @@ export class InvoiceEngine {
   private performStateActions(
     invoice: CalculatedInvoice,
     newState: InvoiceState,
-    context?: any
+    context?: StateTransitionContext
   ): CalculatedInvoice {
     switch (newState) {
       case InvoiceState.SENT:

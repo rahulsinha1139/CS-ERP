@@ -81,7 +81,7 @@ async function runComprehensiveTests() {
   generateFinalReport(allResults);
 }
 
-function generateFinalReport(results: any[]) {
+function generateFinalReport(results: unknown[]) {
   console.log('\n' + '='.repeat(60));
   console.log('🎉 FINAL TEST REPORT');
   console.log('='.repeat(60));

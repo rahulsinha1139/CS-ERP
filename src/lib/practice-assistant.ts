@@ -7,6 +7,22 @@ import type { Notification } from '../store/app-store';
 
 type NotificationType = Notification['type'];
 
+// Type definitions for template function parameters
+type TemplateArgs = {
+  invoiceCreated: [customerName: string, amount: number];
+  paymentReceived: [customerName: string, amount: number];
+  invoiceOverdue: [customerName: string, daysOverdue: number];
+  customerAdded: [customerName: string];
+  performanceInsight: [metric: string, value: string];
+  systemAlert: [message: string];
+  errorAlert: [operation: string, error: string];
+};
+
+// Template function type that returns notification data
+type TemplateFunction<T extends keyof TemplateArgs> = (
+  ...args: TemplateArgs[T]
+) => Omit<Notification, 'id' | 'timestamp' | 'read'>;
+
 export class PracticeAssistant {
   // Static notification templates for Mrs. Pradhan's common scenarios
   static templates = {
@@ -54,11 +70,11 @@ export class PracticeAssistant {
   };
 
   // Helper to create practice-specific notifications
-  static createNotification(
-    template: keyof typeof PracticeAssistant.templates,
-    ...args: any[]
+  static createNotification<T extends keyof TemplateArgs>(
+    template: T,
+    ...args: TemplateArgs[T]
   ): Omit<Notification, 'id' | 'timestamp' | 'read'> {
-    const templateFn = PracticeAssistant.templates[template];
+    const templateFn = PracticeAssistant.templates[template] as TemplateFunction<T>;
     return templateFn(...args);
   }
 

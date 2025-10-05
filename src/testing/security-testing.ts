@@ -3,7 +3,8 @@
  * Comprehensive security validation algorithms for CS ERP
  */
 
-import { describe, test, expect } from '@jest/globals';
+// Jest imports for future test integration
+// import { describe, test, expect } from '@jest/globals';
 
 interface SecurityTestResult {
   testName: string;
@@ -107,7 +108,7 @@ class SecurityTestFramework {
         if (result.vulnerable) {
           vulnerabilities.push(`SQL Injection vulnerability: ${payload}`);
         }
-      } catch (error) {
+      } catch {
         // Error handling during testing
       }
     }
@@ -126,7 +127,7 @@ class SecurityTestFramework {
         if (result.vulnerable) {
           vulnerabilities.push(`NoSQL Injection vulnerability: ${JSON.stringify(payload)}`);
         }
-      } catch (error) {
+      } catch {
         // Error handling during testing
       }
     }
@@ -146,7 +147,7 @@ class SecurityTestFramework {
         if (result.vulnerable) {
           vulnerabilities.push(`Command Injection vulnerability: ${payload}`);
         }
-      } catch (error) {
+      } catch {
         // Error handling during testing
       }
     }
@@ -451,26 +452,31 @@ class SecurityTestFramework {
   private async testSQLInjection(payload: string): Promise<{ vulnerable: boolean }> {
     // Mock implementation - would test actual database queries
     // In real implementation, this would attempt SQL injection and check if it succeeds
+    console.log(`Testing SQL injection with payload: ${payload}`);
     return { vulnerable: false }; // Simulating no SQL injection vulnerability
   }
 
-  private async testNoSQLInjection(payload: any): Promise<{ vulnerable: boolean }> {
+  private async testNoSQLInjection(payload: unknown): Promise<{ vulnerable: boolean }> {
     // Mock implementation for NoSQL injection testing
+    console.log(`Testing NoSQL injection with payload: ${JSON.stringify(payload)}`);
     return { vulnerable: false };
   }
 
   private async testCommandInjection(payload: string): Promise<{ vulnerable: boolean }> {
     // Mock implementation for command injection testing
+    console.log(`Testing command injection with payload: ${payload}`);
     return { vulnerable: false };
   }
 
   private async testStoredXSS(payload: string): Promise<{ vulnerable: boolean }> {
     // Mock implementation - would test stored XSS vulnerabilities
+    console.log(`Testing stored XSS with payload: ${payload}`);
     return { vulnerable: false };
   }
 
   private async testReflectedXSS(payload: string): Promise<{ vulnerable: boolean }> {
     // Mock implementation - would test reflected XSS vulnerabilities
+    console.log(`Testing reflected XSS with payload: ${payload}`);
     return { vulnerable: false };
   }
 
@@ -542,11 +548,13 @@ class SecurityTestFramework {
   private async simulateGSTCalculation(amount: number, tamperedGST: number): Promise<{ accepted: boolean; gstAmount: number }> {
     // Mock implementation - would test GST calculation tampering
     const correctGST = amount * 0.18;
+    console.log(`Testing GST tampering: ${tamperedGST} vs correct: ${correctGST}`);
     return { accepted: false, gstAmount: correctGST }; // Simulating rejection of tampered GST
   }
 
-  private async testStateCodeTampering(stateTest: any): Promise<{ rejected: boolean }> {
+  private async testStateCodeTampering(stateTest: { fromState: string; toState: string; shouldReject: boolean }): Promise<{ rejected: boolean }> {
     // Mock implementation - would test state code tampering
+    console.log(`Testing state code tampering: ${stateTest.fromState} -> ${stateTest.toState}`);
     return { rejected: true }; // Simulating proper rejection of tampering
   }
 

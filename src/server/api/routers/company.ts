@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 // Helper function to get current company data
 const getCurrentCompanyData = () => {
@@ -55,17 +55,17 @@ const getCurrentCompanyData = () => {
 
 export const companyRouter = createTRPCRouter({
   // Get all companies
-  getAll: publicProcedure.query(async () => {
+  getAll: protectedProcedure.query(async () => {
     return [];
   }),
 
   // Get current company (for CS practice)
-  getCurrent: publicProcedure.query(async () => {
+  getCurrent: protectedProcedure.query(async () => {
     return getCurrentCompanyData();
   }),
 
   // Get company by ID (with fallback)
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       if (input.id === 1) {
@@ -75,7 +75,7 @@ export const companyRouter = createTRPCRouter({
     }),
 
   // Update company settings
-  updateSettings: publicProcedure
+  updateSettings: protectedProcedure
     .input(z.object({
       invoicePrefix: z.string().optional(),
       paymentTerms: z.string().optional(),
@@ -96,13 +96,13 @@ export const companyRouter = createTRPCRouter({
     }),
 
   // Get company settings
-  getSettings: publicProcedure.query(async () => {
+  getSettings: protectedProcedure.query(async () => {
     const company = getCurrentCompanyData();
     return company.settings;
   }),
 
   // Update company branding
-  updateBranding: publicProcedure
+  updateBranding: protectedProcedure
     .input(z.object({
       primaryColor: z.string().optional(),
       accentColor: z.string().optional(),
@@ -122,7 +122,7 @@ export const companyRouter = createTRPCRouter({
     }),
 
   // Get company branding
-  getBranding: publicProcedure.query(async () => {
+  getBranding: protectedProcedure.query(async () => {
     const company = getCurrentCompanyData();
     return company.branding;
   })

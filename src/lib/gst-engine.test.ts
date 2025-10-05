@@ -202,7 +202,7 @@ describe('GST Engine', () => {
 
     test('should handle empty GSTIN', () => {
       expect(gstUtils.validateGSTIN('')).toBe(false);
-      expect(gstUtils.validateGSTIN(undefined as any)).toBe(false);
+      expect(gstUtils.validateGSTIN(null as unknown as string)).toBe(false);
     });
   });
 

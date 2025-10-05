@@ -4,12 +4,10 @@
  * Following Asymm mathematical optimization principles
  */
 
-import { Decimal } from 'decimal.js';
 
 // Mathematical constants for optimization
 const GOLDEN_RATIO = 1.618033988;
 const MATCHING_TOLERANCE = 0.01; // 1 paisa tolerance for floating point precision
-const BULK_PROCESSING_BATCH_SIZE = Math.floor(100 * GOLDEN_RATIO); // ~162 records per batch
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -49,7 +47,7 @@ export interface PaymentRecord {
   invoiceNumber?: string;
   bankReference?: string;
   upiTransactionId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 export interface InvoiceRecord {
@@ -149,7 +147,7 @@ export class PaymentReconciliationEngine {
     }
   ): Promise<ReconciliationResult> {
     const startTime = performance.now();
-    const tolerance = options?.tolerance || MATCHING_TOLERANCE;
+    const _tolerance = options?.tolerance || MATCHING_TOLERANCE;
     const includePartial = options?.includePartialMatches ?? true;
     const useFuzzy = options?.useFuzzyMatching ?? true;
     const maxTime = options?.maxProcessingTime || 30000; // 30 seconds
@@ -174,7 +172,7 @@ export class PaymentReconciliationEngine {
 
         if (processedPayments.has(payment.id)) continue;
 
-        const exactMatch = this.findExactMatch(payment, unmatchedInvoices, tolerance);
+        const exactMatch = this.findExactMatch(payment, unmatchedInvoices, _tolerance);
 
         if (exactMatch) {
           matches.push({
@@ -199,7 +197,7 @@ export class PaymentReconciliationEngine {
 
         // Check for partial matches if enabled
         if (includePartial) {
-          const partialMatch = this.findPartialMatch(payment, unmatchedInvoices, tolerance);
+          const partialMatch = this.findPartialMatch(payment, unmatchedInvoices, _tolerance);
 
           if (partialMatch) {
             matches.push({
@@ -221,7 +219,7 @@ export class PaymentReconciliationEngine {
 
         // Step 2: Fuzzy matching using multiple algorithms
         if (useFuzzy) {
-          const fuzzyMatch = await this.findFuzzyMatch(payment, unmatchedInvoices, tolerance);
+          const fuzzyMatch = await this.findFuzzyMatch(payment, unmatchedInvoices, _tolerance);
 
           if (fuzzyMatch && fuzzyMatch.confidence > 70) {
             matches.push({
@@ -618,7 +616,7 @@ export class PaymentReconciliationEngine {
   private async findFuzzyMatch(
     payment: PaymentRecord,
     invoices: InvoiceRecord[],
-    tolerance: number
+    _tolerance: number
   ): Promise<{ invoice: InvoiceRecord; score: number; confidence: number; notes: string } | null> {
     const matches = [];
 
@@ -695,7 +693,7 @@ export class PaymentReconciliationEngine {
   private checkForDuplicates(
     payment: PaymentRecord,
     allPayments: PaymentRecord[],
-    processedIds: Set<string>
+    _processedIds: Set<string>
   ): boolean {
     // Check for duplicates against ALL payments, not just unprocessed ones
     // A duplicate is a payment that shares similar characteristics regardless of processing status

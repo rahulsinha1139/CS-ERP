@@ -3,29 +3,71 @@
  * Complete Customer-Invoice-Payment Pipeline Validation
  */
 
-import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+
+// Type definitions for mock data
+interface MockCustomer {
+  id: string;
+  name: string;
+  email?: string;
+  gstin?: string;
+  stateCode?: string;
+  address?: string;
+  createdAt: Date;
+}
+
+interface MockInvoice {
+  id: string;
+  number: string;
+  customerId: string;
+  subtotal: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount?: number;
+  totalTax: number;
+  grandTotal: number;
+  paidAmount?: number;
+  status: string;
+  dueDate?: Date;
+  createdAt: Date;
+}
+
+interface MockPayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  method: string;
+  reference?: string;
+  paymentDate: Date;
+  status: string;
+}
+
+interface MockDataAccess {
+  companyId: string;
+  customerCount?: number;
+}
 
 // Mock implementations for testing
 const mockDatabase = {
-  customers: [] as any[],
-  invoices: [] as any[],
-  payments: [] as any[]
+  customers: [] as MockCustomer[],
+  invoices: [] as MockInvoice[],
+  payments: [] as MockPayment[]
 };
 
 const mockApiClient = {
   customer: {
-    create: jest.fn(),
-    getById: jest.fn(),
-    update: jest.fn()
+    create: vi.fn(),
+    getById: vi.fn(),
+    update: vi.fn()
   },
   invoice: {
-    create: jest.fn(),
-    getById: jest.fn(),
-    updateStatus: jest.fn()
+    create: vi.fn(),
+    getById: vi.fn(),
+    updateStatus: vi.fn()
   },
   payment: {
-    create: jest.fn(),
-    reconcile: jest.fn()
+    create: vi.fn(),
+    reconcile: vi.fn()
   }
 };
 
@@ -261,7 +303,7 @@ describe('🔄 End-to-End Workflow Testing', () => {
       const companyBData = { companyId: 'company-b', customerCount: 30 };
 
       // User from Company A should not see Company B data
-      const userAAccess = (data: any) => data.companyId === 'company-a';
+      const userAAccess = (data: MockDataAccess) => data.companyId === 'company-a';
 
       expect(userAAccess(companyAData)).toBe(true);
       expect(userAAccess(companyBData)).toBe(false);

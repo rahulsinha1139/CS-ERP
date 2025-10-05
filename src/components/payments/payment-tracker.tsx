@@ -3,15 +3,16 @@
  * Advanced payment tracking with invoice linking and reconciliation
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { api } from '../../lib/trpc-client';
+import { api } from '@/utils/api';
 import { useAppStore } from '../../store/app-store';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
+import { AuraCard, AuraCardContent, AuraCardHeader, AuraCardTitle } from '../ui/aura-card';
+import { AuraButton } from '../ui/aura-button';
 import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
 
@@ -31,7 +32,7 @@ interface PaymentTrackerProps {
   invoiceId?: string;
 }
 
-export default function PaymentTracker({ customerId, invoiceId }: PaymentTrackerProps) {
+const PaymentTracker = React.memo(function PaymentTracker({ customerId, invoiceId }: PaymentTrackerProps) {
   const [showForm, setShowForm] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
@@ -51,22 +52,20 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
   });
 
   // Data fetching
-  const { data: payments, isLoading, refetch } = (api as any).payment.getAll.useQuery({
+  const { data: payments, isLoading, refetch } = api.payment.getAll.useQuery({
     customerId,
     invoiceId,
-    filters: filters.status ? { status: filters.status as any } : undefined,
+    filters: filters.status ? { status: filters.status as 'PENDING' | 'PAID' | 'FAILED' } : undefined,
   });
 
-  const { data: unpaidInvoices } = (api as any).invoice.getUnpaid.useQuery({
-    customerId,
-  });
+  const { data: unpaidInvoices } = api.invoice.getUnpaid.useQuery();
 
-  const { data: paymentStats } = (api as any).payment.getStats.useQuery({
+  const { data: paymentStats } = api.payment.getStats.useQuery({
     customerId,
   });
 
   // Mutations
-  const recordPaymentMutation = (api as any).payment.record.useMutation({
+  const recordPaymentMutation = api.payment.create.useMutation({
     onSuccess: () => {
       addNotification({
         type: 'success',
@@ -77,7 +76,7 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
       setShowForm(false);
       refetch();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       addNotification({
         type: 'error',
         title: 'Recording Failed',
@@ -86,17 +85,17 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
     },
   });
 
-  const onSubmit = (data: PaymentFormData) => {
+  const onSubmit = useCallback((data: PaymentFormData) => {
     recordPaymentMutation.mutate({
       ...data,
       paymentDate: new Date(data.paymentDate),
       amount: Number(data.amount),
     });
-  };
+  }, [recordPaymentMutation]);
 
   const getPaymentStatusColor = (status: string) => {
     const colors = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
+      PENDING: 'bg-blue-100 text-blue-800',
       COMPLETED: 'bg-green-100 text-green-800',
       FAILED: 'bg-red-100 text-red-800',
       REFUNDED: 'bg-gray-100 text-gray-800',
@@ -131,17 +130,16 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
           <h2 className="text-2xl font-bold text-gray-900">Payment Tracking</h2>
           <p className="text-gray-600">Monitor and record customer payments</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
+        <AuraButton onClick={() => setShowForm(!showForm)} variant="primary" icon={<Plus className="h-4 w-4" />}>
           Record Payment
-        </Button>
+        </AuraButton>
       </div>
 
       {/* Payment Stats */}
       {paymentStats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Received</p>
@@ -151,11 +149,11 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
 
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Outstanding</p>
@@ -165,11 +163,11 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
                 </div>
                 <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
 
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">This Month</p>
@@ -179,11 +177,11 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
                 </div>
                 <CheckCircle className="h-8 w-8 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
 
-          <Card>
-            <CardContent className="p-6">
+          <AuraCard>
+            <AuraCardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Average Days</p>
@@ -193,18 +191,18 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
                 </div>
                 <Clock className="h-8 w-8 text-gray-600" />
               </div>
-            </CardContent>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
         </div>
       )}
 
       {/* Payment Form */}
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Record New Payment</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <AuraCard>
+          <AuraCardHeader>
+            <AuraCardTitle>Record New Payment</AuraCardTitle>
+          </AuraCardHeader>
+          <AuraCardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -214,9 +212,9 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Invoice</option>
-                    {unpaidInvoices?.map((invoice: any) => (
+                    {unpaidInvoices?.map((invoice) => (
                       <option key={invoice.id} value={invoice.id}>
-                        {invoice.number} - {invoice.customer.name} - {formatCurrency(invoice.remainingAmount)}
+                        {invoice.number} - {invoice.customer.name} - {formatCurrency(invoice.grandTotal - (invoice.paidAmount || 0))}
                       </option>
                     ))}
                   </select>
@@ -278,23 +276,23 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
               <div className="flex items-center gap-4">
                 <Button
                   type="submit"
-                  disabled={recordPaymentMutation.isLoading}
+                  disabled={recordPaymentMutation.isPending}
                   className="flex-1"
                 >
-                  {recordPaymentMutation.isLoading ? 'Recording...' : 'Record Payment'}
+                  {recordPaymentMutation.isPending ? 'Recording...' : 'Record Payment'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                   Cancel
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
       )}
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
+      <AuraCard>
+        <AuraCardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -321,15 +319,25 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
               More Filters
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </AuraCardContent>
+      </AuraCard>
+
+      {/* Record Payment Button */}
+      <AuraButton
+        onClick={() => setShowForm(!showForm)}
+        variant="primary"
+        icon={<Plus className="h-5 w-5" />}
+        className="w-full py-4 text-lg font-semibold"
+      >
+        Record New Payment
+      </AuraButton>
 
       {/* Payment History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <AuraCard>
+        <AuraCardHeader>
+          <AuraCardTitle>Payment History</AuraCardTitle>
+        </AuraCardHeader>
+        <AuraCardContent>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -344,7 +352,7 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
                 </tr>
               </thead>
               <tbody>
-                {payments?.map((payment: any) => (
+                {payments?.map((payment) => (
                   <tr key={payment.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 text-gray-600">
                       {formatDate(payment.paymentDate)}
@@ -381,8 +389,10 @@ export default function PaymentTracker({ customerId, invoiceId }: PaymentTracker
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+        </AuraCardContent>
+      </AuraCard>
     </div>
   );
-}
+});
+
+export default PaymentTracker;

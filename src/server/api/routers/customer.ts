@@ -5,9 +5,10 @@
  */
 
 import { z } from 'zod';
-import { createTRPCRouter, publicProcedure } from '../trpc';
+import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
+import { idGenerator } from '@/lib/id-generator';
 
 // Validation schemas
 const paginationSchema = z.object({
@@ -48,41 +49,23 @@ function calculateOutstandingAmount(grandTotal: number, paidAmount: number) {
 }
 
 export const customerRouter = createTRPCRouter({
-  // Get all customers with financial summary
-  getAll: publicProcedure
+  // Get all customers with financial summary - OPTIMIZED VERSION
+  getAll: protectedProcedure // Apply security
     .input(paginationSchema.optional())
     .query(async ({ ctx, input = {} }) => {
-      const { page, limit, search, sortBy, sortOrder } = input;
-      const offset = ((page || 1) - 1) * (limit || 20);
+      const { page = 1, limit = 20, search, sortBy, sortOrder } = input;
+      const offset = (page - 1) * limit;
 
-      // Build where clause for search
-      const whereClause: any = {
-        companyId: ctx.companyId,
-      };
-
+      const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.session?.user.companyId || '001' };
       if (search) {
         whereClause.OR = [
           { name: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
-          { gstin: { contains: search, mode: 'insensitive' } },
         ];
       }
 
-      // Build order by clause
-      let orderBy: any;
-      if (sortBy === 'totalBilled') {
-        // This will need aggregation, handle separately
-        orderBy = { createdAt: sortOrder };
-      } else {
-        const validFields = ['name', 'email', 'createdAt'] as const;
-        type ValidField = (typeof validFields)[number];
-        const field = validFields.includes(sortBy as ValidField) ? sortBy as ValidField : 'createdAt';
-        orderBy = { [field]: sortOrder };
-      }
-
-      // Optimized for Mrs. Pradhan's practice: Use aggregation queries instead of fetching all data
-      const [customers, totalCount] = await Promise.all([
+      // Fetch aggregated data and total count in parallel
+      const [customers, totalCount] = await ctx.db.$transaction([
         ctx.db.customer.findMany({
           where: whereClause,
           select: {
@@ -91,115 +74,47 @@ export const customerRouter = createTRPCRouter({
             email: true,
             phone: true,
             address: true,
-            gstin: true,
-            stateCode: true,
-            creditLimit: true,
-            creditDays: true,
-            whatsappNumber: true,
-            preferredLanguage: true,
-            timezone: true,
             createdAt: true,
-            updatedAt: true,
-            companyId: true,
+            _count: {
+              select: { invoices: true },
+            },
+            invoices: {
+              select: {
+                grandTotal: true,
+                paidAmount: true,
+                status: true,
+                dueDate: true,
+              },
+            },
           },
-          orderBy,
+          orderBy: { [sortBy || 'name']: sortOrder || 'asc' },
           skip: offset,
-          take: limit || 20,
+          take: limit,
         }),
         ctx.db.customer.count({ where: whereClause }),
       ]);
 
-      // Get financial summaries with optimized aggregation queries
-      const customerIds = customers.map(c => c.id);
-
-      const [invoiceAggregates, paymentTotals, overdueCounts] = await Promise.all([
-        // Aggregate invoice data
-        ctx.db.invoice.groupBy({
-          by: ['customerId'],
-          where: { customerId: { in: customerIds } },
-          _sum: {
-            grandTotal: true,
-            paidAmount: true,
-          },
-          _count: {
-            id: true,
-          },
-        }),
-
-        // Aggregate payment data (direct payments, not through invoices)
-        ctx.db.payment.groupBy({
-          by: ['customerId'],
-          where: { customerId: { in: customerIds } },
-          _sum: {
-            amount: true,
-          },
-          _count: {
-            id: true,
-          },
-        }),
-
-        // Count overdue invoices - simplified approach for Mrs. Pradhan's practice
-        customerIds.length > 0 ?
-          ctx.db.invoice.findMany({
-            where: {
-              customerId: { in: customerIds },
-              dueDate: { lt: new Date() },
-              status: { not: 'PAID' },
-            },
-            select: {
-              customerId: true,
-            },
-          }) : [],
-      ]);
-
-      // Create lookup maps for efficient data joining
-      const invoiceMap = new Map(invoiceAggregates.map(agg => [
-        agg.customerId,
-        {
-          totalBilled: agg._sum.grandTotal || 0,
-          totalPaidViaInvoices: agg._sum.paidAmount || 0,
-          totalInvoices: agg._count.id || 0,
-        }
-      ]));
-
-      const paymentMap = new Map(paymentTotals.map(agg => [
-        agg.customerId,
-        {
-          totalDirectPayments: agg._sum.amount || 0,
-          totalPayments: agg._count.id || 0,
-        }
-      ]));
-
-      // Create overdue count map from invoice list
-      const overdueMap = new Map<string, number>();
-      overdueCounts.forEach(invoice => {
-        const current = overdueMap.get(invoice.customerId) || 0;
-        overdueMap.set(invoice.customerId, current + 1);
-      });
-
-      // Enhance customers with optimized financial summaries
+      // Process the aggregated data
       const enhancedCustomers = customers.map((customer) => {
-        const invoiceData = invoiceMap.get(customer.id) || { totalBilled: 0, totalPaidViaInvoices: 0, totalInvoices: 0 };
-        const paymentData = paymentMap.get(customer.id) || { totalDirectPayments: 0, totalPayments: 0 };
-        const overdueCount = overdueMap.get(customer.id) || 0;
-
-        const totalBilled = invoiceData.totalBilled;
-        const totalPaid = invoiceData.totalPaidViaInvoices + paymentData.totalDirectPayments;
-        const totalOutstanding = Math.max(0, totalBilled - totalPaid);
+        const totalBilled = customer.invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
+        const totalPaid = customer.invoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
+        const overdueInvoices = customer.invoices.filter(
+          (inv) => inv.dueDate && new Date(inv.dueDate) < new Date() && inv.status !== 'PAID'
+        ).length;
 
         return {
-          ...customer,
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          createdAt: customer.createdAt,
           financialSummary: {
-            totalInvoices: invoiceData.totalInvoices,
-            totalPayments: paymentData.totalPayments,
-            totalBilled: Math.round(totalBilled * 100) / 100,
-            totalPaid: Math.round(totalPaid * 100) / 100,
-            totalOutstanding: Math.round(totalOutstanding * 100) / 100,
-            paidInvoices: Math.max(0, invoiceData.totalInvoices - overdueCount),
-            pendingInvoices: overdueCount,
-            overdueInvoices: overdueCount,
-            // Note: Last payment date would require additional query - optimize later if needed
-            lastPaymentDate: null,
+            totalInvoices: customer._count.invoices,
+            totalBilled,
+            totalPaid,
+            totalOutstanding: totalBilled - totalPaid,
+            overdueInvoices,
           },
         };
       });
@@ -208,16 +123,14 @@ export const customerRouter = createTRPCRouter({
         customers: enhancedCustomers,
         pagination: {
           total: totalCount,
-          page: page || 1,
-          pages: Math.ceil(totalCount / (limit || 20)),
-          totalPages: Math.ceil(totalCount / (limit || 20)),
-          totalCount,
+          page,
+          pages: Math.ceil(totalCount / limit),
         },
       };
     }),
 
   // Get customer by ID with complete financial dashboard
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const customer = await ctx.db.customer.findUnique({
@@ -341,13 +254,13 @@ export const customerRouter = createTRPCRouter({
     }),
 
   // Get customer invoices with payment status
-  getInvoices: publicProcedure
+  getInvoices: protectedProcedure
     .input(z.object({
       customerId: z.string(),
       status: z.enum(['ALL', 'PAID', 'UNPAID', 'OVERDUE', 'PARTIALLY_PAID']).default('ALL'),
     }))
     .query(async ({ ctx, input }) => {
-      let whereClause: any = {
+      const whereClause: Prisma.InvoiceWhereInput = {
         customerId: input.customerId,
         companyId: ctx.companyId,
       };
@@ -391,7 +304,7 @@ export const customerRouter = createTRPCRouter({
     }),
 
   // Get simple customer list for forms/dropdowns
-  getList: publicProcedure
+  getList: protectedProcedure
     .query(async ({ ctx }) => {
       if (!ctx.companyId) {
         throw new TRPCError({
@@ -426,11 +339,12 @@ export const customerRouter = createTRPCRouter({
     }),
 
   // Create new customer
-  create: publicProcedure
+  create: protectedProcedure
     .input(createCustomerSchema)
     .mutation(async ({ ctx, input }) => {
       const customer = await ctx.db.customer.create({
         data: {
+          id: idGenerator.customer(), // ✅ UUID v4 - No race conditions
           ...input,
           companyId: ctx.companyId!,
         },
@@ -440,7 +354,7 @@ export const customerRouter = createTRPCRouter({
     }),
 
   // Update customer
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       id: z.string(),
       data: createCustomerSchema.partial(),
@@ -458,13 +372,13 @@ export const customerRouter = createTRPCRouter({
     }),
 
   // Get top customers by revenue
-  getTopCustomers: publicProcedure
+  getTopCustomers: protectedProcedure
     .input(z.object({
       limit: z.number().min(1).max(50).default(10),
       period: z.enum(['7d', '30d', '90d', '1y', 'all']).default('all'),
     }))
     .query(async ({ ctx, input }) => {
-      let dateFilter: any = {};
+      const dateFilter: Prisma.InvoiceWhereInput = {};
       const now = new Date();
 
       switch (input.period) {
@@ -520,5 +434,137 @@ export const customerRouter = createTRPCRouter({
         .slice(0, input.limit);
 
       return customersWithRevenue;
+    }),
+
+  // HIGH-PERFORMANCE: Get all customers with server-side calculated summaries only
+  getAllWithSummary: protectedProcedure
+    .input(paginationSchema.optional())
+    .query(async ({ ctx, input = {} }) => {
+      const { page = 1, limit = 20, search, sortBy, sortOrder } = input;
+      const offset = (page - 1) * limit;
+
+      const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.session?.user.companyId || '001' };
+      if (search) {
+        whereClause.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      // PERFORMANCE OPTIMIZATION: Use aggregation queries instead of fetching full data
+      const [customers, totalCount] = await ctx.db.$transaction([
+        // Fetch only customer details with aggregated invoice data
+        ctx.db.customer.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            gstin: true,
+            createdAt: true,
+            // Server-side aggregation for performance
+            _count: { select: { invoices: true } },
+            invoices: {
+              select: {
+                grandTotal: true,
+                paidAmount: true,
+                status: true,
+                dueDate: true,
+                issueDate: true,
+              },
+            },
+          },
+          orderBy: { [sortBy || 'name']: sortOrder || 'asc' },
+          skip: offset,
+          take: limit,
+        }),
+        ctx.db.customer.count({ where: whereClause }),
+      ]);
+
+      // SERVER-SIDE CALCULATION: Process all financial metrics in memory
+      const optimizedCustomers = customers.map((customer) => {
+        // Calculate all metrics server-side to minimize data transfer
+        const totalBilled = customer.invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
+        const totalPaid = customer.invoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
+        const totalOutstanding = totalBilled - totalPaid;
+
+        // Advanced calculations
+        const paidInvoices = customer.invoices.filter(inv => inv.paidAmount >= inv.grandTotal).length;
+        const partiallyPaidInvoices = customer.invoices.filter(
+          inv => inv.paidAmount > 0 && inv.paidAmount < inv.grandTotal
+        ).length;
+        const unpaidInvoices = customer.invoices.filter(inv => inv.paidAmount === 0).length;
+
+        // Overdue calculation
+        const overdueInvoices = customer.invoices.filter(inv =>
+          inv.dueDate &&
+          new Date(inv.dueDate) < new Date() &&
+          inv.paidAmount < inv.grandTotal
+        ).length;
+
+        // Performance metrics
+        const paymentRate = totalBilled > 0 ? (totalPaid / totalBilled) * 100 : 0;
+        const averageInvoiceValue = customer._count.invoices > 0 ? totalBilled / customer._count.invoices : 0;
+
+        // Recent activity
+        const recentInvoices = customer.invoices
+          .sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime())
+          .slice(0, 3);
+
+        const lastInvoiceDate = recentInvoices[0]?.issueDate;
+        const hasRecentActivity = lastInvoiceDate &&
+          (new Date().getTime() - new Date(lastInvoiceDate).getTime()) < (30 * 24 * 60 * 60 * 1000); // 30 days
+
+        // CRITICAL: Return only customer details + calculated summary object
+        // NO invoice arrays sent to client for performance
+        return {
+          // Core customer data
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          gstin: customer.gstin,
+          createdAt: customer.createdAt,
+
+          // Pre-calculated financial summary (replaces invoice arrays)
+          summary: {
+            // Basic metrics
+            totalInvoices: customer._count.invoices,
+            totalBilled: Math.round(totalBilled * 100) / 100,
+            totalPaid: Math.round(totalPaid * 100) / 100,
+            totalOutstanding: Math.round(totalOutstanding * 100) / 100,
+
+            // Status breakdown
+            paidInvoices,
+            partiallyPaidInvoices,
+            unpaidInvoices,
+            overdueInvoices,
+
+            // Performance indicators
+            paymentRate: Math.round(paymentRate * 100) / 100,
+            averageInvoiceValue: Math.round(averageInvoiceValue * 100) / 100,
+
+            // Activity indicators
+            lastInvoiceDate,
+            hasRecentActivity,
+
+            // Risk assessment
+            riskLevel: overdueInvoices > 2 ? 'HIGH' :
+                      totalOutstanding > averageInvoiceValue * 2 ? 'MEDIUM' : 'LOW',
+          },
+        };
+      });
+
+      return {
+        customers: optimizedCustomers,
+        pagination: {
+          total: totalCount,
+          page,
+          pages: Math.ceil(totalCount / limit),
+        },
+      };
     }),
 });

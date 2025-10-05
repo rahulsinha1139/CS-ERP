@@ -4,16 +4,16 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const serviceRouter = createTRPCRouter({
   // Get all service templates
-  getAll: publicProcedure.query(async ({ ctx: _ctx }) => {
+  getAll: protectedProcedure.query(async ({ ctx: _ctx }) => {
     return [];
   }),
 
   // Get service templates (alias for getAll for backward compatibility)
-  getTemplates: publicProcedure.query(async ({ ctx: _ctx }) => {
+  getTemplates: protectedProcedure.query(async ({ ctx: _ctx }) => {
     // Professional CS service templates
     return [
       {
@@ -65,7 +65,7 @@ export const serviceRouter = createTRPCRouter({
   }),
 
   // Get service by ID
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx: _ctx, input }) => {
       // Professional CS service templates (avoiding circular reference)
@@ -80,7 +80,7 @@ export const serviceRouter = createTRPCRouter({
     }),
 
   // Create new service template
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       name: z.string().min(1),
       description: z.string(),

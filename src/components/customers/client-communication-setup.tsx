@@ -65,8 +65,9 @@ export default function ClientCommunicationSetup({
 
   // TODO: Implement when communication API is ready
   const updatePreferences = {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mutate: (_data: { customerId: string; preferences: CommunicationPreferences }) => {
-      // Simulate API call
+      // Simulate API call - _data parameter reserved for future API implementation
       setTimeout(() => {
         setStep(4) // Success step
         onComplete?.()
@@ -217,7 +218,7 @@ export default function ClientCommunicationSetup({
                   </div>
                   <Switch
                     checked={emailOptIn}
-                    onCheckedChange={(checked) => setValue('emailOptIn', checked)}
+                    onCheckedChange={(checked: boolean) => setValue('emailOptIn', checked)}
                   />
                 </div>
               </div>
@@ -246,7 +247,7 @@ export default function ClientCommunicationSetup({
                   </div>
                   <Switch
                     checked={whatsappOptIn}
-                    onCheckedChange={(checked) => setValue('whatsappOptIn', checked)}
+                    onCheckedChange={(checked: boolean) => setValue('whatsappOptIn', checked)}
                   />
                 </div>
               </div>
@@ -291,10 +292,10 @@ export default function ClientCommunicationSetup({
 
               {/* No opt-ins warning */}
               {!emailOptIn && !whatsappOptIn && (
-                <Alert className="border-yellow-200 bg-yellow-50">
+                <Alert className="border-blue-200 bg-blue-50">
                   <div>
-                    <h4 className="font-medium text-yellow-800">⚠️ Limited Communication</h4>
-                    <p className="text-yellow-700 text-sm mt-1">
+                    <h4 className="font-medium text-blue-800">⚠️ Limited Communication</h4>
+                    <p className="text-blue-700 text-sm mt-1">
                       Without email or WhatsApp enabled, we can only contact you by phone
                       for urgent matters. You may miss important deadlines.
                     </p>

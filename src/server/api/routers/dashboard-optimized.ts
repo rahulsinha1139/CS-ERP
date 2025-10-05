@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 
 export const dashboardOptimizedRouter = createTRPCRouter({
@@ -12,7 +12,7 @@ export const dashboardOptimizedRouter = createTRPCRouter({
    * Get dashboard metrics - OPTIMIZED single query version
    * Reduces database calls from 10+ to 1 single raw query
    */
-  getMetrics: publicProcedure
+  getMetrics: protectedProcedure
     .input(z.object({
       dateRange: z.enum(['thisWeek', 'thisMonth', 'thisQuarter', 'thisYear']).default('thisMonth'),
     }).optional())
@@ -25,9 +25,13 @@ export const dashboardOptimizedRouter = createTRPCRouter({
       }
 
       const now = new Date();
-      let startDate: Date;
 
-      // Calculate date range
+      // Always calculate quarterly revenue regardless of selected range
+      const quarter = Math.floor(now.getMonth() / 3);
+      const quarterStartDate = new Date(now.getFullYear(), quarter * 3, 1);
+
+      // Date range for other metrics
+      let startDate: Date;
       switch (input?.dateRange || 'thisMonth') {
         case 'thisWeek':
           startDate = new Date(now);
@@ -37,8 +41,7 @@ export const dashboardOptimizedRouter = createTRPCRouter({
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
           break;
         case 'thisQuarter':
-          const quarter = Math.floor(now.getMonth() / 3);
-          startDate = new Date(now.getFullYear(), quarter * 3, 1);
+          startDate = quarterStartDate;
           break;
         case 'thisYear':
           startDate = new Date(now.getFullYear(), 0, 1);
@@ -48,6 +51,8 @@ export const dashboardOptimizedRouter = createTRPCRouter({
       // SIMPLIFIED: Use regular Prisma queries for now (still optimized)
       const [
         invoiceMetrics,
+        quarterlyInvoiceMetrics,
+        overdueInvoices,
         customerCount,
         paymentMetrics,
         complianceMetrics
@@ -61,6 +66,25 @@ export const dashboardOptimizedRouter = createTRPCRouter({
           },
           _count: { id: true },
           _sum: { grandTotal: true },
+        }),
+
+        // Quarterly revenue (always this quarter)
+        ctx.db.invoice.aggregate({
+          where: {
+            companyId: ctx.companyId,
+            issueDate: { gte: quarterStartDate },
+          },
+          _sum: { grandTotal: true },
+        }),
+
+        // Overdue invoices (unpaid invoices past due date)
+        ctx.db.invoice.aggregate({
+          where: {
+            companyId: ctx.companyId,
+            dueDate: { lt: now },
+            status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
+          },
+          _sum: { grandTotal: true, paidAmount: true },
         }),
 
         // Customer count
@@ -92,6 +116,10 @@ export const dashboardOptimizedRouter = createTRPCRouter({
 
       // Process the results
       const revenue = invoiceMetrics.reduce((sum, item) => sum + (Number(item._sum.grandTotal) || 0), 0);
+      const quarterlyRevenue = Number(quarterlyInvoiceMetrics._sum.grandTotal) || 0;
+      const overdueTotal = Number(overdueInvoices._sum.grandTotal) || 0;
+      const overduePaid = Number(overdueInvoices._sum.paidAmount) || 0;
+      const overdueAmount = overdueTotal - overduePaid;
       const paymentsReceived = Number(paymentMetrics._sum.amount) || 0;
       const outstandingAmount = revenue - paymentsReceived;
       const collectionRate = revenue > 0 ? (paymentsReceived / revenue) * 100 : 0;
@@ -115,8 +143,10 @@ export const dashboardOptimizedRouter = createTRPCRouter({
       return {
         revenue: {
           total: revenue,
+          quarterly: quarterlyRevenue,
           received: paymentsReceived,
           outstanding: outstandingAmount,
+          overdue: overdueAmount,
           collectionRate: Math.round(collectionRate * 100) / 100,
         },
         invoices: invoiceCounts,
@@ -130,7 +160,7 @@ export const dashboardOptimizedRouter = createTRPCRouter({
   /**
    * Get recent activity - OPTIMIZED with limits
    */
-  getRecentActivity: publicProcedure
+  getRecentActivity: protectedProcedure
     .query(async ({ ctx }) => {
       if (!ctx.companyId) {
         throw new TRPCError({

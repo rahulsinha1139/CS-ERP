@@ -118,21 +118,30 @@ const headingVariants = cva(
   }
 );
 
-interface HeadingProps extends Omit<React.HTMLAttributes<HTMLHeadingElement>, "color">, VariantProps<typeof headingVariants> {
-  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+interface HeadingProps<T extends keyof React.JSX.IntrinsicElements = 'h2'>
+  extends Omit<React.HTMLAttributes<HTMLElement>, "color">, VariantProps<typeof headingVariants> {
+  as?: T;
 }
 
-const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
-  ({ className, size, color, as: Component = 'h2', children, ...props }, ref) => (
+const Heading = <T extends keyof React.JSX.IntrinsicElements = 'h2'>({
+  className,
+  size,
+  color,
+  as,
+  children,
+  ...props
+}: HeadingProps<T> & { ref?: React.Ref<HTMLElement> }) => {
+  const Component = (as || 'h2') as React.ElementType;
+
+  return (
     <Component
-      ref={ref as any}
       className={cn(headingVariants({ size, color }), className)}
       {...props}
     >
       {children}
     </Component>
-  )
-);
+  );
+};
 Heading.displayName = 'Heading';
 
 // Status Badge

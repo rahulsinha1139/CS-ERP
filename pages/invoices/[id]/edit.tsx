@@ -5,22 +5,22 @@
 
 import React from 'react';
 import { useRouter } from 'next/router';
-import { api } from '../../../src/lib/trpc-client';
-import InvoiceForm from '../../../src/components/invoices/invoice-form';
-import { Card, CardContent } from '../../../src/components/ui/card';
-import { Button } from '../../../src/components/ui/button';
+import { api } from '@/utils/api';
+import InvoiceForm from '@/components/invoices/invoice-form';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 export default function EditInvoicePage() {
   const router = useRouter();
   const { id } = router.query;
 
-  const { data: invoice, isLoading } = (api as any).invoice.getById.useQuery(
+  const { data: invoice, isLoading } = api.invoice.getById.useQuery(
     { id: id as string },
     { enabled: !!id }
   );
 
-  const handleSuccess = (updatedInvoice: any) => {
+  const handleSuccess = (updatedInvoice: { id: string }) => {
     // Navigate back to invoice detail page
     router.push(`/invoices/${updatedInvoice.id}`);
   };

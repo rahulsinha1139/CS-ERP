@@ -8,7 +8,9 @@ import { createTRPCRouter, companyProcedure } from '../trpc'
 import { communicationEngine } from '@/lib/communication-engine'
 import { render } from '@react-email/render'
 import InvoiceEmail from '@/emails/invoice-email'
+import { Prisma } from '@prisma/client'
 import ComplianceReminderEmail from '@/emails/compliance-reminder'
+import { idGenerator } from '@/lib/id-generator'
 
 // Input validation schemas
 const configureResendSchema = z.object({
@@ -48,7 +50,7 @@ const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
   content: z.string().min(1, 'Content is required'),
   templateId: z.string().optional(),
-  templateData: z.record(z.any()).optional()
+  templateData: z.record(z.string(), z.unknown()).optional()
 })
 
 const sendBulkEmailSchema = z.object({
@@ -96,6 +98,7 @@ export const communicationRouter = createTRPCRouter({
       await ctx.db.companySettings.upsert({
         where: { companyId: ctx.companyId },
         create: {
+          id: idGenerator.companySettings(),
           companyId: ctx.companyId,
           emailProvider: 'RESEND',
           smtpUser: encryptedData.apiKey,
@@ -139,14 +142,15 @@ export const communicationRouter = createTRPCRouter({
       await ctx.db.companySettings.upsert({
         where: { companyId: ctx.companyId },
         create: {
+          id: idGenerator.companySettings(),
           companyId: ctx.companyId,
-          whatsappProvider: input.provider as any,
+          whatsappProvider: input.provider,
           whatsappApiKey: encryptedData.accountSid,
           whatsappPhoneId: input.fromNumber,
           whatsappEnabled: true
         },
         update: {
-          whatsappProvider: input.provider as any,
+          whatsappProvider: input.provider,
           whatsappApiKey: encryptedData.accountSid,
           whatsappPhoneId: input.fromNumber,
           whatsappEnabled: true
@@ -208,6 +212,7 @@ export const communicationRouter = createTRPCRouter({
       const preferences = await ctx.db.communicationPreference.upsert({
         where: { customerId: input.customerId },
         create: {
+          id: idGenerator.communicationPreference(),
           customerId: input.customerId,
           ...input.preferences
         },
@@ -280,6 +285,7 @@ export const communicationRouter = createTRPCRouter({
       // Log the communication
       await ctx.db.communicationLog.create({
         data: {
+          id: idGenerator.communicationLog(),
           customerId: Array.isArray(input.to) ? 'bulk' : 'single', // Simplified for now
           companyId: ctx.companyId,
           type: input.templateId?.includes('INVOICE') ? 'INVOICE' : 'GENERAL_UPDATE',
@@ -291,7 +297,7 @@ export const communicationRouter = createTRPCRouter({
           providerId: result.messageId,
           providerName: result.provider,
           cost: result.cost,
-          metadata: result.metadata,
+          metadata: result.metadata ? JSON.parse(JSON.stringify(result.metadata)) : Prisma.JsonNull,
           errorMessage: result.error
         }
       })
@@ -317,6 +323,7 @@ export const communicationRouter = createTRPCRouter({
       // Log bulk operation
       await ctx.db.communicationLog.create({
         data: {
+          id: idGenerator.communicationLog(),
           customerId: 'bulk_operation',
           companyId: ctx.companyId,
           type: 'GENERAL_UPDATE',
@@ -407,6 +414,7 @@ export const communicationRouter = createTRPCRouter({
         // Log communication
         await ctx.db.communicationLog.create({
           data: {
+            id: idGenerator.communicationLog(),
             customerId: invoice.customer.id,
             companyId: ctx.companyId,
             type: 'INVOICE',
@@ -447,6 +455,7 @@ For questions, contact: ${invoice.company.email}
         // Log communication
         await ctx.db.communicationLog.create({
           data: {
+            id: idGenerator.communicationLog(),
             customerId: invoice.customer.id,
             companyId: ctx.companyId,
             type: 'INVOICE',
@@ -475,6 +484,7 @@ For questions, contact: ${invoice.company.email}
     .mutation(async ({ input, ctx }) => {
       const template = await ctx.db.messageTemplate.create({
         data: {
+          id: idGenerator.messageTemplate(),
           companyId: ctx.companyId,
           ...input
         }
@@ -588,8 +598,8 @@ For questions, contact: ${invoice.company.email}
 
           results.email = emailValid
           if (!emailValid) results.errors.push('Email configuration invalid')
-        } catch (error: any) {
-          results.errors.push(`Email test failed: ${error.message}`)
+        } catch (error: unknown) {
+          results.errors.push(`Email test failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       }
 
@@ -609,8 +619,8 @@ For questions, contact: ${invoice.company.email}
 
           results.whatsapp = whatsappValid
           if (!whatsappValid) results.errors.push('WhatsApp configuration invalid')
-        } catch (error: any) {
-          results.errors.push(`WhatsApp test failed: ${error.message}`)
+        } catch (error: unknown) {
+          results.errors.push(`WhatsApp test failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       }
 

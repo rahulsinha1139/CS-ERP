@@ -8,16 +8,17 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
-import { api } from '@/lib/trpc-client';
+import { api } from '@/utils/api';
+import { AuraButton } from '@/components/ui/aura-button';
+import { AuraCard, AuraCardContent, AuraCardHeader, AuraCardTitle } from '@/components/ui/aura-card';
 import {
-  Card,
-  MetricCard,
-  Grid,
-  Heading,
-  StatusBadge,
-  LoadingCard,
-  ProgressBar
-} from '@/components/ui/design-system';
+  AuraGrid,
+  AuraHeading,
+  AuraStatusBadge,
+  AuraLoadingCard,
+  AuraProgressBar,
+  AuraMetricCard
+} from '@/components/ui/aura-components';
 
 // Types for dashboard data
 interface DashboardMetrics {
@@ -99,20 +100,36 @@ interface DashboardData {
 // Real tRPC data hooks
 
 const useDashboardData = () => {
-  // Fetch dashboard metrics
-  const { data: dashboardMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = api.dashboard?.getMetrics?.useQuery() || { data: null, isLoading: true, refetch: () => {} };
+  // Fetch dashboard metrics with aggressive caching
+  const { data: dashboardMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = api.dashboard.getMetrics.useQuery(undefined, {
+    staleTime: 1000 * 60 * 5, // 5 minutes - data stays fresh
+    gcTime: 1000 * 60 * 10, // 10 minutes - cached data retention
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
+    refetchInterval: false, // No automatic polling
+  });
 
-  // Fetch recent invoices
-  const { data: recentInvoicesData, isLoading: invoicesLoading } = api.invoice?.list?.useQuery({
+  // Fetch recent invoices with caching
+  const { data: recentInvoicesData, isLoading: invoicesLoading } = api.invoice.list.useQuery({
     limit: 5,
     page: 1
-  }) || { data: [], isLoading: true };
+  }, {
+    staleTime: 1000 * 60 * 3, // 3 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
-  // Fetch upcoming compliance deadlines
-  const { data: upcomingDeadlinesData, isLoading: deadlinesLoading } = api.compliance?.getUpcoming?.useQuery({
+  // Fetch upcoming compliance deadlines with caching
+  const { data: upcomingDeadlinesData, isLoading: deadlinesLoading } = api.compliance.getUpcoming.useQuery({
     limit: 5,
     days: 30
-  }) || { data: [], isLoading: true };
+  }, {
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   // Transform data to match interface
   const loading = metricsLoading || invoicesLoading || deadlinesLoading;
@@ -165,7 +182,7 @@ const useDashboardData = () => {
   return { data, loading, refetch: refetchMetrics };
 };
 
-// Quick action buttons
+// Quick action buttons with Aura design
 const QuickActions = () => {
   const router = useRouter();
 
@@ -174,188 +191,190 @@ const QuickActions = () => {
   const handleCompliance = () => router.push('/compliance');
   const handleReports = () => router.push('/system-test');
 
+  const PlusIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+  );
+
+  const CheckIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+    </svg>
+  );
+
+  const ClipboardIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-8 4v9a2 2 0 002 2h4a2 2 0 002-2v-9m-8 0h8" />
+    </svg>
+  );
+
+  const ChartIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  );
+
   return (
-    <Card className="p-6">
-      <Heading size="default" className="mb-4">Quick Actions</Heading>
-      <Grid cols={2} gap="sm">
-        <button
-          onClick={handleNewInvoice}
-          className="w-full p-4 text-left border border-border rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-all duration-300 group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-              <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">New Invoice</p>
-              <p className="text-sm text-muted-foreground">Create and send invoice</p>
-            </div>
-          </div>
-        </button>
+    <AuraCard>
+      <AuraCardHeader>
+        <AuraCardTitle>Quick Actions</AuraCardTitle>
+      </AuraCardHeader>
+      <AuraCardContent>
+        <AuraGrid cols={2} gap="sm">
+          <AuraButton
+            variant="primary"
+            size="lg"
+            icon={<PlusIcon />}
+            onClick={handleNewInvoice}
+            className="h-auto py-4 px-3 flex-col items-start text-left w-full justify-start"
+          >
+            <span className="font-medium text-sm whitespace-nowrap">New Invoice</span>
+            <span className="text-xs opacity-80 whitespace-nowrap">Create & send</span>
+          </AuraButton>
 
-        <button
-          onClick={handleRecordPayment}
-          className="w-full p-4 text-left border border-border rounded-lg hover:border-success-300 hover:bg-success-50 transition-all duration-300 group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-success-100 rounded-lg flex items-center justify-center group-hover:bg-success-200 transition-colors">
-              <svg className="w-5 h-5 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Record Payment</p>
-              <p className="text-sm text-muted-foreground">Track received payments</p>
-            </div>
-          </div>
-        </button>
+          <AuraButton
+            variant="success"
+            size="lg"
+            icon={<CheckIcon />}
+            onClick={handleRecordPayment}
+            className="h-auto py-4 px-3 flex-col items-start text-left w-full justify-start"
+          >
+            <span className="font-medium text-sm whitespace-nowrap">Add Payment</span>
+            <span className="text-xs opacity-80 whitespace-nowrap">Track receipts</span>
+          </AuraButton>
 
-        <button
-          onClick={handleCompliance}
-          className="w-full p-4 text-left border border-border rounded-lg hover:border-warning-300 hover:bg-warning-50 transition-all duration-300 group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-warning-100 rounded-lg flex items-center justify-center group-hover:bg-warning-200 transition-colors">
-              <svg className="w-5 h-5 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-8 4v9a2 2 0 002 2h4a2 2 0 002-2v-9m-8 0h8" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Compliance Check</p>
-              <p className="text-sm text-muted-foreground">Review upcoming deadlines</p>
-            </div>
-          </div>
-        </button>
+          <AuraButton
+            variant="secondary"
+            size="lg"
+            icon={<ClipboardIcon />}
+            onClick={handleCompliance}
+            className="h-auto py-4 px-3 flex-col items-start text-left w-full justify-start"
+          >
+            <span className="font-medium text-sm whitespace-nowrap">Compliance</span>
+            <span className="text-xs opacity-80 whitespace-nowrap">View deadlines</span>
+          </AuraButton>
 
-        <button
-          onClick={handleReports}
-          className="w-full p-4 text-left border border-border rounded-lg hover:border-neutral-300 hover:bg-neutral-50 transition-all duration-300 group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center group-hover:bg-neutral-200 transition-colors">
-              <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">View Reports</p>
-              <p className="text-sm text-muted-foreground">Generate business insights</p>
-            </div>
-          </div>
-        </button>
-      </Grid>
-    </Card>
+          <AuraButton
+            variant="tertiary"
+            size="lg"
+            icon={<ChartIcon />}
+            onClick={handleReports}
+            className="h-auto py-4 px-3 flex-col items-start text-left w-full justify-start"
+          >
+            <span className="font-medium text-sm whitespace-nowrap">Reports</span>
+            <span className="text-xs opacity-80 whitespace-nowrap">Business insights</span>
+          </AuraButton>
+        </AuraGrid>
+      </AuraCardContent>
+    </AuraCard>
   );
 };
 
-// Recent invoices component
+// Recent invoices component with Aura design
 const RecentInvoices = ({ invoices, loading }: { invoices: Invoice[]; loading: boolean }) => (
-  <Card className="p-6">
-    <div className="flex items-center justify-between mb-4">
-      <Heading size="default">Recent Invoices</Heading>
-      <Link href="/invoices" className="text-sm text-primary-600 hover:text-primary-800 font-medium">
-        View all
-      </Link>
-    </div>
-
-    {loading ? (
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="animate-pulse">
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="space-y-2">
-                <div className="h-4 bg-muted-foreground/20 rounded w-32"></div>
-                <div className="h-3 bg-muted-foreground/20 rounded w-24"></div>
+  <AuraCard>
+    <AuraCardHeader>
+      <div className="flex items-center justify-between">
+        <AuraCardTitle>Recent Invoices</AuraCardTitle>
+        <Link href="/invoices" className="text-sm text-primary-500 hover:text-primary-600 font-medium">
+          View all
+        </Link>
+      </div>
+    </AuraCardHeader>
+    <AuraCardContent>
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <AuraLoadingCard key={i} className="p-3 h-16" />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {invoices.map((invoice) => (
+            <div key={invoice.id} className="flex items-center justify-between p-3 border border-blue-100 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+              <div>
+                <p className="font-medium text-text-primary">{invoice.id}</p>
+                <p className="text-sm text-text-secondary">{invoice.client}</p>
+                {invoice.dueDate && (
+                  <p className={cn(
+                    "text-xs",
+                    invoice.isOverdue ? "text-red-600" : "text-text-tertiary"
+                  )}>
+                    Due: {formatDate(new Date(invoice.dueDate))}
+                  </p>
+                )}
               </div>
-              <div className="h-6 bg-muted-foreground/20 rounded w-16"></div>
+              <div className="text-right">
+                <p className="font-semibold text-text-primary">{formatCurrency(invoice.amount)}</p>
+                <AuraStatusBadge status={invoice.status}>
+                  {invoice.status}
+                </AuraStatusBadge>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="space-y-3">
-        {invoices.map((invoice) => (
-          <div key={invoice.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-            <div>
-              <p className="font-medium text-foreground">{invoice.id}</p>
-              <p className="text-sm text-muted-foreground">{invoice.client}</p>
-              {invoice.dueDate && (
-                <p className={cn(
-                  "text-xs",
-                  invoice.isOverdue ? "text-danger-600" : "text-muted-foreground"
-                )}>
-                  Due: {formatDate(new Date(invoice.dueDate))}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="font-semibold text-foreground">{formatCurrency(invoice.amount)}</p>
-              <StatusBadge status={invoice.status}>
-                {invoice.status}
-              </StatusBadge>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </Card>
+          ))}
+        </div>
+      )}
+    </AuraCardContent>
+  </AuraCard>
 );
 
-// Upcoming deadlines component
+// Upcoming deadlines component with Aura design
 const UpcomingDeadlines = ({ deadlines, loading }: { deadlines: Deadline[]; loading: boolean }) => (
-  <Card className="p-6">
-    <div className="flex items-center justify-between mb-4">
-      <Heading size="default">Upcoming Deadlines</Heading>
-      <Link href="/compliance" className="text-sm text-primary-600 hover:text-primary-800 font-medium">
-        View all
-      </Link>
-    </div>
-
-    {loading ? (
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <LoadingCard key={i} className="p-3" />
-        ))}
+  <AuraCard>
+    <AuraCardHeader>
+      <div className="flex items-center justify-between">
+        <AuraCardTitle>Upcoming Deadlines</AuraCardTitle>
+        <Link href="/compliance" className="text-sm text-primary-500 hover:text-primary-600 font-medium">
+          View all
+        </Link>
       </div>
-    ) : (
-      <div className="space-y-3">
-        {deadlines.map((deadline) => (
-          <div key={deadline.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-            <div className="flex-1">
-              <p className="font-medium text-foreground">{deadline.title}</p>
-              <p className="text-sm text-muted-foreground">{deadline.client}</p>
-              <p className="text-xs text-muted-foreground">Due: {formatDate(new Date(deadline.dueDate))}</p>
+    </AuraCardHeader>
+    <AuraCardContent>
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <AuraLoadingCard key={i} className="p-3 h-16" />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {deadlines.map((deadline) => (
+            <div key={deadline.id} className="flex items-center justify-between p-3 border border-blue-100 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+              <div className="flex-1">
+                <p className="font-medium text-text-primary">{deadline.title}</p>
+                <p className="text-sm text-text-secondary">{deadline.client}</p>
+                <p className="text-xs text-text-tertiary">Due: {formatDate(new Date(deadline.dueDate))}</p>
+              </div>
+              <div className="text-right">
+                <AuraStatusBadge status={deadline.priority === 'high' ? 'failed' : deadline.priority === 'medium' ? 'pending' : 'draft'}>
+                  {deadline.daysLeft} days
+                </AuraStatusBadge>
+              </div>
             </div>
-            <div className="text-right">
-              <StatusBadge status={deadline.priority === 'high' ? 'failed' : deadline.priority === 'medium' ? 'pending' : 'draft'}>
-                {deadline.daysLeft} days
-              </StatusBadge>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </Card>
+          ))}
+        </div>
+      )}
+    </AuraCardContent>
+  </AuraCard>
 );
 
 // Main dashboard component
-export default function DashboardOverview() {
+const DashboardOverview = React.memo(function DashboardOverview() {
   const { data, loading } = useDashboardData();
 
   if (loading && !data) {
     return (
       <div className="space-y-6">
-        <Grid cols={3} gap="lg">
-          <LoadingCard />
-          <LoadingCard />
-          <LoadingCard />
-        </Grid>
-        <Grid cols={2} gap="lg">
-          <LoadingCard />
-          <LoadingCard />
-        </Grid>
+        <AuraGrid cols={3} gap="lg">
+          <AuraLoadingCard />
+          <AuraLoadingCard />
+          <AuraLoadingCard />
+        </AuraGrid>
+        <AuraGrid cols={2} gap="lg">
+          <AuraLoadingCard />
+          <AuraLoadingCard />
+        </AuraGrid>
       </div>
     );
   }
@@ -366,11 +385,11 @@ export default function DashboardOverview() {
     <div className="space-y-8">
       {/* Key Metrics */}
       <section>
-        <Heading size="xl" className="mb-6">Business Overview</Heading>
-        <Grid cols={4} gap="lg">
-          <MetricCard
-            title="Total Revenue"
-            value={formatCurrency(metrics?.revenue?.total || 0)}
+        <AuraHeading size="xl" className="mb-6">Business Overview</AuraHeading>
+        <AuraGrid cols={4} gap="lg">
+          <AuraMetricCard
+            title="Quarterly Revenue"
+            value={formatCurrency(metrics?.revenue?.quarterly || 0)}
             change={{ value: metrics?.revenue?.collectionRate || 0, type: 'increase' }}
             icon={
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,7 +399,7 @@ export default function DashboardOverview() {
             onClick={() => console.log('Navigate to revenue details')}
           />
 
-          <MetricCard
+          <AuraMetricCard
             title="Pending Invoices"
             value={metrics?.invoices?.pending || 0}
             description="Awaiting payment"
@@ -392,9 +411,9 @@ export default function DashboardOverview() {
             onClick={() => console.log('Navigate to pending invoices')}
           />
 
-          <MetricCard
+          <AuraMetricCard
             title="Overdue Amount"
-            value={formatCurrency(metrics?.revenue?.outstanding || 0)}
+            value={formatCurrency(metrics?.revenue?.overdue || 0)}
             description="Requires follow-up"
             icon={
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -403,7 +422,7 @@ export default function DashboardOverview() {
             }
           />
 
-          <MetricCard
+          <AuraMetricCard
             title="Compliance Score"
             value={`${Math.round((metrics?.compliance?.total ? ((metrics.compliance.total - metrics.compliance.pending) / metrics.compliance.total) * 100 : 0))}%`}
             description="Regulatory compliance"
@@ -413,11 +432,11 @@ export default function DashboardOverview() {
               </svg>
             }
           />
-        </Grid>
+        </AuraGrid>
       </section>
 
       {/* Main content grid */}
-      <Grid cols={3} gap="lg" className="items-start">
+      <AuraGrid cols={3} gap="lg" className="items-start">
         {/* Left column - 2/3 width */}
         <div className="col-span-2 space-y-6">
           <RecentInvoices invoices={recentInvoices || []} loading={loading} />
@@ -429,34 +448,40 @@ export default function DashboardOverview() {
           <QuickActions />
 
           {/* Quick Stats */}
-          <Card className="p-6">
-            <Heading size="default" className="mb-4">Quick Stats</Heading>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Active Clients</span>
-                <span className="font-semibold">{quickStats?.totalClients}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Active Projects</span>
-                <span className="font-semibold">{quickStats?.activeProjects}</span>
-              </div>
-              <div className="space-y-2">
+          <AuraCard>
+            <AuraCardHeader>
+              <AuraCardTitle>Quick Stats</AuraCardTitle>
+            </AuraCardHeader>
+            <AuraCardContent>
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Task Progress</span>
-                  <span className="text-sm font-medium">
-                    {quickStats?.completedTasks || 0}/{(quickStats?.completedTasks || 0) + (quickStats?.pendingTasks || 0)}
-                  </span>
+                  <span className="text-sm text-text-secondary">Active Clients</span>
+                  <span className="font-semibold">{quickStats?.totalClients}</span>
                 </div>
-                <ProgressBar
-                  value={quickStats?.completedTasks || 0}
-                  max={(quickStats?.completedTasks || 0) + (quickStats?.pendingTasks || 0)}
-                  color="success"
-                />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-text-secondary">Active Projects</span>
+                  <span className="font-semibold">{quickStats?.activeProjects}</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Task Progress</span>
+                    <span className="text-sm font-medium">
+                      {quickStats?.completedTasks || 0}/{(quickStats?.completedTasks || 0) + (quickStats?.pendingTasks || 0)}
+                    </span>
+                  </div>
+                  <AuraProgressBar
+                    value={quickStats?.completedTasks || 0}
+                    max={(quickStats?.completedTasks || 0) + (quickStats?.pendingTasks || 0)}
+                    color="success"
+                  />
+                </div>
               </div>
-            </div>
-          </Card>
+            </AuraCardContent>
+          </AuraCard>
         </div>
-      </Grid>
+      </AuraGrid>
     </div>
   );
-}
+});
+
+export default DashboardOverview;

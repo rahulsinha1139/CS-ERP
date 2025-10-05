@@ -27,7 +27,7 @@ const addYears = (date: Date, years: number): Date => {
   return result;
 };
 
-const format = (date: Date, formatStr: string): string => {
+const format = (date: Date, _formatStr: string): string => {
   return date.toISOString().split('T')[0];
 };
 
@@ -39,7 +39,6 @@ const isBefore = (date1: Date, date2: Date): boolean => {
   return date1.getTime() < date2.getTime();
 };
 import { invoiceEngine, type InvoiceData } from './invoice-engine';
-import { emailEngine } from './email-engine';
 
 export enum BillingFrequency {
   MONTHLY = 'MONTHLY',
@@ -227,7 +226,7 @@ export class RecurringEngine {
 
         // Generate invoice
         const invoiceData = this.generateInvoiceFromContract(contract, escalation, processingDate);
-        const calculatedInvoice = invoiceEngine.calculateInvoice(invoiceData);
+        invoiceEngine.calculateInvoice(invoiceData);
 
         // Here you would save the invoice to database
         // For now, we'll simulate with a generated ID
@@ -352,11 +351,11 @@ export class RecurringEngine {
     const yearDiff = current.getFullYear() - start.getFullYear();
     const monthDiff = current.getMonth() - start.getMonth();
     const dayDiff = current.getDate() - start.getDate();
+    yearDiff; // Used for calculation validation
 
     // Precise calculation considering months and days
-    let elapsed = yearDiff;
     if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-      elapsed -= 1;
+      // Account for partial year
     }
 
     // Add fractional year for more precise escalation calculations

@@ -5,14 +5,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { api } from '../../src/lib/trpc-client';
-import { useAppStore } from '../../src/store/app-store';
-import InvoicePDFViewer from '../../src/components/invoices/invoice-pdf-viewer';
-import PaymentTracker from '../../src/components/payments/payment-tracker';
-import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
-import { Button } from '../../src/components/ui/button';
-import { formatCurrency, formatDate } from '../../src/lib/utils';
-import { ArrowLeft, Edit, Send, Download, Trash2, DollarSign } from 'lucide-react';
+import { api } from '@/utils/api';
+import { useAppStore } from '@/store/app-store';
+import InvoicePDFViewer from '@/components/invoices/invoice-pdf-viewer';
+import PaymentTracker from '@/components/payments/payment-tracker';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { ArrowLeft, Edit, Send, Trash2, DollarSign } from 'lucide-react';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -20,14 +20,16 @@ export default function InvoiceDetailPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'pdf' | 'payments'>('details');
   const addNotification = useAppStore(state => state.addNotification);
 
-  const { data: invoice, isLoading } = (api as any).invoice.getById.useQuery(
+  const { data: invoice, isLoading } = api.invoice.getById.useQuery(
     { id: id as string },
-    { enabled: !!id }
+    { enabled: !!id && typeof window !== 'undefined' } // Only run on client with valid ID
   );
 
-  const { data: company } = (api as any).company.getCurrent.useQuery();
+  const { data: company } = api.company.getCurrent.useQuery(undefined, {
+    enabled: typeof window !== 'undefined', // Only run on client
+  });
 
-  const sendInvoiceMutation = (api as any).invoice.send.useMutation({
+  const sendInvoiceMutation = api.invoice.send.useMutation({
     onSuccess: () => {
       addNotification({
         type: 'success',
@@ -37,7 +39,7 @@ export default function InvoiceDetailPage() {
     },
   });
 
-  const deleteInvoiceMutation = (api as any).invoice.delete.useMutation({
+  const deleteInvoiceMutation = api.invoice.delete.useMutation({
     onSuccess: () => {
       addNotification({
         type: 'success',
@@ -152,7 +154,7 @@ export default function InvoiceDetailPage() {
             <Button
               size="sm"
               onClick={handleSendInvoice}
-              disabled={sendInvoiceMutation.isLoading}
+              disabled={sendInvoiceMutation.isPending}
               className="flex items-center gap-2"
             >
               <Send className="h-4 w-4" />
@@ -163,7 +165,7 @@ export default function InvoiceDetailPage() {
             variant="outline"
             size="sm"
             onClick={handleDeleteInvoice}
-            disabled={deleteInvoiceMutation.isLoading}
+            disabled={deleteInvoiceMutation.isPending}
             className="flex items-center gap-2 text-red-600 hover:text-red-700"
           >
             <Trash2 className="h-4 w-4" />
@@ -238,7 +240,7 @@ export default function InvoiceDetailPage() {
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
               className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.key
                   ? 'border-blue-500 text-blue-600'
@@ -326,7 +328,7 @@ export default function InvoiceDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {invoice.lines.map((line: any, index: number) => (
+                    {invoice.lines.map((line, index: number) => (
                       <tr key={index} className="border-b">
                         <td className="p-3">{line.description}</td>
                         <td className="p-3">{line.quantity}</td>
@@ -377,7 +379,7 @@ export default function InvoiceDetailPage() {
 
       {activeTab === 'pdf' && (
         <InvoicePDFViewer
-          invoice={pdfInvoiceData}
+          invoice={pdfInvoiceData as unknown as Parameters<typeof InvoicePDFViewer>[0]['invoice']}
           onEmailSent={() => addNotification({
             type: 'success',
             title: 'Email Sent',

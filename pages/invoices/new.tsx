@@ -5,15 +5,15 @@
 
 import React from 'react';
 import { useRouter } from 'next/router';
-import InvoiceForm from '../../src/components/invoices/invoice-form';
-import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
-import { Button } from '../../src/components/ui/button';
+import InvoiceForm from '@/components/invoices/invoice-form';
+import { AuraCard, AuraCardContent } from '@/components/ui/aura-card';
+import { AuraButton } from '@/components/ui/aura-button';
 import { ArrowLeft } from 'lucide-react';
 
 export default function NewInvoicePage() {
   const router = useRouter();
 
-  const handleSuccess = (invoice: any) => {
+  const handleSuccess = (invoice: { id: string }) => {
     // Navigate to invoice detail page or back to list
     router.push(`/invoices/${invoice.id}`);
   };
@@ -26,15 +26,14 @@ export default function NewInvoicePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
+        <AuraButton
+          variant="secondary"
           size="sm"
           onClick={() => router.back()}
-          className="flex items-center gap-2"
+          icon={<ArrowLeft className="h-4 w-4" />}
         >
-          <ArrowLeft className="h-4 w-4" />
           Back
-        </Button>
+        </AuraButton>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Create New Invoice</h1>
           <p className="text-gray-600">Generate a new invoice with GST calculations</p>
@@ -42,14 +41,14 @@ export default function NewInvoicePage() {
       </div>
 
       {/* Invoice Form */}
-      <Card>
-        <CardContent className="p-6">
+      <AuraCard>
+        <AuraCardContent className="p-6">
           <InvoiceForm
             onSuccess={handleSuccess}
             onCancel={handleCancel}
           />
-        </CardContent>
-      </Card>
+        </AuraCardContent>
+      </AuraCard>
     </div>
   );
 }

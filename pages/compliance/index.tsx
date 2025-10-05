@@ -4,10 +4,15 @@
  */
 
 import React, { useState } from 'react';
-import { api } from '../../src/lib/trpc-client';
-import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
-import { Button } from '../../src/components/ui/button';
-import { formatCurrency, formatDate } from '../../src/lib/utils';
+import Head from 'next/head';
+import { api } from '@/utils/api';
+import { AuraLayout } from '@/components/ui/aura-layout';
+import { AuraCard, AuraCardContent } from '@/components/ui/aura-card';
+import { AuraButton } from '@/components/ui/aura-button';
+import { AuraSelect } from '@/components/ui/aura-select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   Calendar,
   AlertTriangle,
@@ -138,57 +143,73 @@ export default function ComplianceDashboard() {
   const overdueItems = dashboardData?.overdueItems || [];
   const recentActivities = dashboardData?.recentActivities || [];
 
+  const breadcrumbs = [
+    { label: "Dashboard", href: "/" },
+    { label: "Compliance" }
+  ];
+
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      <AuraButton
+        variant="secondary"
+        onClick={handleInitializeTemplates}
+        disabled={initializeTemplatesMutation.isLoading}
+        icon={<FileText className="h-4 w-4" />}
+      >
+        {initializeTemplatesMutation.isLoading ? 'Initializing...' : 'Initialize Templates'}
+      </AuraButton>
+      <AuraButton
+        variant="primary"
+        onClick={() => console.log('Create new compliance')}
+        icon={<Plus className="h-4 w-4" />}
+      >
+        New Compliance
+      </AuraButton>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Compliance Management</h1>
-          <p className="text-gray-600">Track deadlines, ROC filings, and regulatory compliance</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={handleInitializeTemplates}
-            disabled={initializeTemplatesMutation.isLoading}
-            className="flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            {initializeTemplatesMutation.isLoading ? 'Initializing...' : 'Setup Templates'}
-          </Button>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Compliance
-          </Button>
-        </div>
-      </div>
+    <>
+      <Head>
+        <title>Compliance - CS ERP Professional Suite</title>
+        <meta name="description" content="Track deadlines, ROC filings, and regulatory compliance" />
+      </Head>
+
+      <AuraLayout
+        title="Compliance Management"
+        subtitle="Track deadlines, ROC filings, and regulatory compliance for Mrs. Pragnya Pradhan's CS practice"
+        breadcrumbs={breadcrumbs}
+        headerActions={headerActions}
+        userEmail="Mrs. Pragnya Pradhan"
+        userName="pragnya@pradhanassociates.com"
+      >
+        <div className="space-y-6">
 
       {/* Date Range Filter */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-600">Period:</span>
-          <select
+          <AuraSelect
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value as any)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
           >
             <option value="thisWeek">This Week</option>
             <option value="thisMonth">This Month</option>
             <option value="thisQuarter">This Quarter</option>
             <option value="thisYear">This Year</option>
-          </select>
+          </AuraSelect>
         </div>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
+        <AuraButton variant="secondary" size="sm" icon={<Download className="h-4 w-4" />}>
           Export Report
-        </Button>
+        </AuraButton>
       </div>
 
       {/* Key Metrics Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Compliances */}
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm font-medium">Total Compliances</p>
@@ -199,12 +220,12 @@ export default function ComplianceDashboard() {
                 <FileText className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Completion Rate */}
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-100 text-sm font-medium">Completion Rate</p>
@@ -215,12 +236,12 @@ export default function ComplianceDashboard() {
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Overdue Items */}
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-red-500 to-red-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-red-100 text-sm font-medium">Overdue Items</p>
@@ -231,12 +252,12 @@ export default function ComplianceDashboard() {
                 <AlertTriangle className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Upcoming Deadlines */}
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-100 text-sm font-medium">Upcoming (7 days)</p>
@@ -247,8 +268,8 @@ export default function ComplianceDashboard() {
                 <Clock className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
       </div>
 
       {/* Secondary Metrics */}
@@ -484,6 +505,8 @@ export default function ComplianceDashboard() {
           </Card>
         </div>
       </div>
-    </div>
+        </div>
+      </AuraLayout>
+    </>
   );
 }

@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react'
-import { api } from '@/lib/trpc-client'
+import { api } from '@/utils/api';
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Input } from '../ui/input'
@@ -49,12 +49,7 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Generate simple ID
-  const generateCustomerId = () => {
-    const timestamp = Date.now().toString().slice(-6)
-    const random = Math.floor(Math.random() * 999).toString().padStart(3, '0')
-    return (timestamp + random).slice(-3).padStart(3, '0')
-  }
+  // Customer ID generation handled by backend
 
   const createCustomer = api.customer.create.useMutation({
     onSuccess: (data) => {
@@ -78,11 +73,7 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
     setIsSubmitting(true)
 
     try {
-      // Generate a simple ID for the customer
-      const customerId = generateCustomerId()
-
       await createCustomer.mutateAsync({
-        id: customerId,
         name: formData.name.trim(),
         email: formData.email.trim() || undefined,
         phone: formData.phone.trim() || undefined,

@@ -13,6 +13,7 @@ async function main() {
     where: { email: 'test@company.com' },
     update: {},
     create: {
+      id: '001',
       name: 'Test Company Secretary Practice',
       email: 'test@company.com',
       phone: '+91-9876543210',
@@ -27,9 +28,10 @@ async function main() {
 
   // Create test customers
   const customer1 = await prisma.customer.upsert({
-    where: { email: 'customer1@test.com' },
+    where: { id: '001' },
     update: {},
     create: {
+      id: '001',
       name: 'Test Customer Private Limited',
       email: 'customer1@test.com',
       phone: '+91-9876543211',
@@ -43,9 +45,10 @@ async function main() {
   });
 
   const customer2 = await prisma.customer.upsert({
-    where: { email: 'customer2@test.com' },
+    where: { id: '002' },
     update: {},
     create: {
+      id: '002',
       name: 'Another Test Company Ltd',
       email: 'customer2@test.com',
       phone: '+91-9876543212',
@@ -62,9 +65,10 @@ async function main() {
 
   // Create some service templates
   const serviceTemplate1 = await prisma.serviceTemplate.upsert({
-    where: { name: 'ROC Annual Filing' },
+    where: { id: '001' },
     update: {},
     create: {
+      id: '001',
       name: 'ROC Annual Filing',
       description: 'Annual Return filing with ROC',
       defaultRate: 2500,
@@ -76,9 +80,10 @@ async function main() {
   });
 
   const serviceTemplate2 = await prisma.serviceTemplate.upsert({
-    where: { name: 'GST Return Filing' },
+    where: { id: '002' },
     update: {},
     create: {
+      id: '002',
       name: 'GST Return Filing',
       description: 'Monthly GST return filing',
       defaultRate: 1500,

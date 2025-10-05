@@ -3,7 +3,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { db } from '../../src/server/api/trpc';
+import { db } from '@/server/api/trpc';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

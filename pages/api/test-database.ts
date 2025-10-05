@@ -12,7 +12,7 @@ interface TestResult {
   test: string;
   status: 'PASS' | 'FAIL';
   message?: string;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 

@@ -30,6 +30,7 @@ async function main() {
   // Create demo customers linked to this company
   const customer1 = await prisma.customer.create({
     data: {
+      id: '001',
       name: 'Demo Customer Pvt Ltd',
       email: 'demo1@testcustomer.com',
       phone: '+91-9876543211',
@@ -44,6 +45,7 @@ async function main() {
 
   const customer2 = await prisma.customer.create({
     data: {
+      id: '002',
       name: 'Another Demo Company Ltd',
       email: 'demo2@testcustomer.com',
       phone: '+91-9876543212',

@@ -10,16 +10,43 @@ import { Card } from '../ui/card'
 import { Input } from '../ui/input'
 import { Alert } from '../ui/alert'
 
+// Types for communication setup data
+interface SetupData {
+  emailProvider?: string
+  fromEmail?: string
+  fromName?: string
+  username?: string
+  password?: string
+  whatsappEnabled?: boolean
+  whatsappProvider?: string
+}
+
+interface EmailFormData {
+  fromEmail: string
+  fromName: string
+  username: string
+  password: string
+}
+
+interface StepProps {
+  data: SetupData
+  onNext: (stepData: Partial<SetupData>) => void
+  onPrev: () => void
+  canGoBack?: boolean
+}
+
+type TestStatus = 'idle' | 'testing' | 'success' | 'error'
+
 interface SetupStep {
   id: string
   title: string
   description: string
-  component: React.ComponentType<any>
+  component: React.ComponentType<StepProps>
 }
 
 export default function CommunicationSetupWizard() {
   const [currentStep, setCurrentStep] = useState(0)
-  const [setupData, setSetupData] = useState<any>({})
+  const [setupData, setSetupData] = useState<SetupData>({})
 
   const steps: SetupStep[] = [
     {
@@ -48,8 +75,8 @@ export default function CommunicationSetupWizard() {
     }
   ]
 
-  const nextStep = (data: any) => {
-    setSetupData((prev: any) => ({ ...prev, ...data }))
+  const nextStep = (data: Partial<SetupData>) => {
+    setSetupData((prev: SetupData) => ({ ...prev, ...data }))
     setCurrentStep(prev => Math.min(prev + 1, steps.length - 1))
   }
 
@@ -190,7 +217,7 @@ function EmailProviderStep({ data, onNext }: StepProps) {
 
 // Step 2: Email Configuration
 function EmailConfigStep({ data, onNext, onPrev, canGoBack }: StepProps) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm<EmailFormData>({
     defaultValues: {
       fromEmail: data.fromEmail || '',
       fromName: data.fromName || '',
@@ -199,12 +226,12 @@ function EmailConfigStep({ data, onNext, onPrev, canGoBack }: StepProps) {
     }
   })
 
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const [testError, setTestError] = useState<string>('')
 
   // TODO: Implement when communication API is ready
   const testConfiguration = {
-    mutate: (data: any) => {
+    mutate: (data: EmailFormData & { provider: string }) => {
       setTestStatus('testing')
       // Simulate API call
       setTimeout(() => {
@@ -216,12 +243,12 @@ function EmailConfigStep({ data, onNext, onPrev, canGoBack }: StepProps) {
     error: testError || null
   }
 
-  const onSubmit = (formData: any) => {
+  const onSubmit = (formData: EmailFormData) => {
     if (testStatus !== 'success') {
       // Auto-test configuration before proceeding
       testConfiguration.mutate({
         ...formData,
-        provider: data.emailProvider
+        provider: data.emailProvider || 'resend'
       })
       return
     }
@@ -385,7 +412,7 @@ function WhatsAppSetupStep({ data, onNext, onPrev }: StepProps) {
   return (
     <div>
       <div className="mb-6">
-        <Alert className="bg-yellow-50 border-yellow-200">
+        <Alert className="bg-blue-50 border-blue-200">
           <div>
             <h4 className="font-medium">WhatsApp Business API Required</h4>
             <p className="text-sm mt-1">
@@ -438,12 +465,11 @@ function WhatsAppSetupStep({ data, onNext, onPrev }: StepProps) {
 
 // Step 4: Test Integration
 function TestIntegrationStep({ data, onPrev }: StepProps) {
-  const [testResults, setTestResults] = useState<any>({})
   const [isComplete, setIsComplete] = useState(false)
 
   // TODO: Implement when communication API is ready
   const finalizeSetup = {
-    mutate: (data: any) => {
+    mutate: (data: SetupData) => {
       // Simulate setup completion
       setTimeout(() => {
         setIsComplete(true)
@@ -503,9 +529,3 @@ function TestIntegrationStep({ data, onPrev }: StepProps) {
   )
 }
 
-interface StepProps {
-  data: any
-  onNext: (stepData: any) => void
-  onPrev: () => void
-  canGoBack?: boolean
-}

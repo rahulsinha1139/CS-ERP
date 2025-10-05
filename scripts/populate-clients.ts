@@ -55,6 +55,7 @@ async function main() {
           stateCode: '27',
           settings: {
             create: {
+              id: '001',
               emailEnabled: true,
               whatsappEnabled: true,
               autoSendInvoices: true,
@@ -91,6 +92,7 @@ async function main() {
 
       const customer = await prisma.customer.create({
         data: {
+          id: `cust-${(i + 1).toString().padStart(3, '0')}`,
           name: client.name,
           email: client.email,
           phone: phone,
