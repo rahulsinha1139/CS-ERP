@@ -1,13 +1,23 @@
 /**
  * Invoice PDF Viewer Component
  * Integrates with PDF engine for invoice generation and display
+ * Now includes automatic attachment merging
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { PDFEngine } from '../../lib/pdf-engine';
+import { PDFMerger } from '../../lib/pdf-merger';
+import { api } from '@/utils/api';
+import { createClient } from '@supabase/supabase-js';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Download, Eye, Send, Loader2 } from 'lucide-react';
+import { InvoiceStatus } from '@prisma/client';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface InvoicePDFViewerProps {
   invoice: {
@@ -15,7 +25,7 @@ interface InvoicePDFViewerProps {
     number: string;
     issueDate: Date;
     dueDate?: Date;
-    status: string;
+    status: InvoiceStatus;
     grandTotal: number;
     placeOfSupply?: string;
     notes?: string;
@@ -64,6 +74,11 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch attachments for this invoice
+  const { data: attachments } = api.attachment.getByInvoiceId.useQuery({
+    invoiceId: invoice.id,
+  });
 
   const generatePDF = useCallback(async () => {
     setIsGenerating(true);
@@ -120,7 +135,7 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
         branding: {
           primaryColor: '#1e40af',
           accentColor: '#3b82f6',
-          logoPosition: 'left',
+          logoPosition: 'left' as const,
           showWatermark: invoice.status === 'SENT',
         },
         paymentDetails: invoice.company?.bankName ? {
@@ -132,16 +147,59 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
       };
 
       const pdfEngine = PDFEngine.getInstance();
-      const pdfBlob = await pdfEngine.generatePDFBlob(pdfData);
-      const url = URL.createObjectURL(pdfBlob);
-      setPdfUrl(url);
+      const invoicePdfBlob = await pdfEngine.generatePDFBlob(pdfData);
+
+      // If there are attachments, merge them with the invoice PDF
+      if (attachments && attachments.length > 0) {
+        console.log(`🔗 Merging ${attachments.length} attachments with invoice PDF`);
+
+        // Download all attachment PDFs from Supabase
+        const attachmentBlobs: Blob[] = [];
+        for (const attachment of attachments) {
+          try {
+            const { data, error } = await supabase.storage
+              .from('invoice-attachments')
+              .download(attachment.storagePath);
+
+            if (!error && data) {
+              attachmentBlobs.push(data);
+              console.log(`✅ Downloaded attachment: ${attachment.fileName}`);
+            } else {
+              console.error(`❌ Failed to download ${attachment.fileName}:`, error);
+            }
+          } catch (err) {
+            console.error(`❌ Error downloading ${attachment.fileName}:`, err);
+          }
+        }
+
+        // Merge invoice PDF with attachments
+        if (attachmentBlobs.length > 0) {
+          const mergedBlob = await PDFMerger.mergePDFs([
+            { type: 'blob', data: invoicePdfBlob },
+            ...attachmentBlobs.map(blob => ({ type: 'blob' as const, data: blob })),
+          ]);
+
+          console.log(`✅ Successfully merged invoice with ${attachmentBlobs.length} attachments`);
+
+          const url = URL.createObjectURL(mergedBlob);
+          setPdfUrl(url);
+        } else {
+          // No attachments could be downloaded, use original invoice PDF
+          const url = URL.createObjectURL(invoicePdfBlob);
+          setPdfUrl(url);
+        }
+      } else {
+        // No attachments, use original invoice PDF
+        const url = URL.createObjectURL(invoicePdfBlob);
+        setPdfUrl(url);
+      }
     } catch (err) {
       setError('Failed to generate PDF. Please try again.');
       console.error('PDF generation error:', err);
     } finally {
       setIsGenerating(false);
     }
-  }, [invoice]);
+  }, [invoice, attachments]);
 
   useEffect(() => {
     generatePDF();

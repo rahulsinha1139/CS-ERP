@@ -12,6 +12,8 @@ import { serviceRouter } from "./routers/service";
 import { complianceRouter } from "./routers/compliance";
 import { communicationRouter } from "./routers/communication";
 import { dashboardOptimizedRouter as dashboardRouter } from "./routers/dashboard-optimized";
+import { attachmentRouter } from "./routers/attachment";
+import { invoiceGroupRouter } from "./routers/invoice-group";
 
 /**
  * This is the primary router for the CS ERP application
@@ -26,6 +28,8 @@ export const appRouter = createTRPCRouter({
   compliance: complianceRouter,
   communication: communicationRouter,
   dashboard: dashboardRouter,
+  attachment: attachmentRouter,
+  invoiceGroup: invoiceGroupRouter,
 });
 
 // Export the type definition for TypeScript

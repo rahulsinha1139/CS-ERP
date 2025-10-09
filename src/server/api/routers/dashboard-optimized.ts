@@ -53,6 +53,7 @@ export const dashboardOptimizedRouter = createTRPCRouter({
         invoiceMetrics,
         quarterlyInvoiceMetrics,
         overdueInvoices,
+        outstandingInvoices,
         customerCount,
         paymentMetrics,
         complianceMetrics
@@ -83,6 +84,15 @@ export const dashboardOptimizedRouter = createTRPCRouter({
             companyId: ctx.companyId,
             dueDate: { lt: now },
             status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
+          },
+          _sum: { grandTotal: true, paidAmount: true },
+        }),
+
+        // Outstanding calculation: ALL unpaid/partially paid invoices (not date-limited)
+        ctx.db.invoice.aggregate({
+          where: {
+            companyId: ctx.companyId,
+            status: { in: ['SENT', 'PARTIALLY_PAID', 'OVERDUE', 'GENERATED'] },
           },
           _sum: { grandTotal: true, paidAmount: true },
         }),
@@ -121,7 +131,12 @@ export const dashboardOptimizedRouter = createTRPCRouter({
       const overduePaid = Number(overdueInvoices._sum.paidAmount) || 0;
       const overdueAmount = overdueTotal - overduePaid;
       const paymentsReceived = Number(paymentMetrics._sum.amount) || 0;
-      const outstandingAmount = revenue - paymentsReceived;
+
+      // Calculate outstanding from ALL unpaid invoices (not date-limited)
+      const outstandingTotal = Number(outstandingInvoices._sum.grandTotal) || 0;
+      const outstandingPaid = Number(outstandingInvoices._sum.paidAmount) || 0;
+      const outstandingAmount = outstandingTotal - outstandingPaid;
+
       const collectionRate = revenue > 0 ? (paymentsReceived / revenue) * 100 : 0;
 
       // Process invoice counts by status

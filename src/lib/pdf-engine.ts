@@ -43,7 +43,7 @@ export interface InvoicePDFData {
     terms?: string;
     paymentInstructions?: string;
     currency?: string;
-    status?: 'DRAFT' | 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'CANCELLED';
+    status?: 'DRAFT' | 'GENERATED' | 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'CANCELLED';
   };
   lineItems: Array<{
     description: string;

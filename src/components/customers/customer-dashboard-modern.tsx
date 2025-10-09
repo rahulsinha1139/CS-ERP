@@ -206,6 +206,15 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => router.push(`/customers/edit?id=${customerId}`)}
+                className="hover:bg-slate-50 transition-all duration-200 shadow-sm"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Edit Customer
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 className="hover:bg-slate-50 transition-all duration-200 shadow-sm"
               >
                 <Send className="h-4 w-4 mr-2" />
@@ -498,7 +507,7 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
                     <div className="text-right">
                       <p className="font-bold text-green-600 text-lg">{formatCurrency(payment.amount)}</p>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        payment.status === 'CLEARED' ? 'bg-green-100 text-green-800' :
+                        payment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                         payment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-slate-100 text-slate-800'
                       }`}>

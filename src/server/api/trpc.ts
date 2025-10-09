@@ -37,10 +37,12 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
 };
 
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
-  // For now, we'll use a simple company ID
-  // This will be replaced with proper authentication
+  // For single-user mode: get the first company from database
+  // In production with NextAuth: this will come from session
+  const company = await db.company.findFirst();
+
   return createInnerTRPCContext({
-    companyId: '001',
+    companyId: company?.id,
   });
 };
 

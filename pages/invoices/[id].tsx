@@ -4,20 +4,24 @@
  */
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { api } from '@/utils/api';
 import { useAppStore } from '@/store/app-store';
 import InvoicePDFViewer from '@/components/invoices/invoice-pdf-viewer';
 import PaymentTracker from '@/components/payments/payment-tracker';
+import { InvoiceAttachments } from '@/components/invoices/invoice-attachments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, Edit, Send, Trash2, DollarSign } from 'lucide-react';
+import { ArrowLeft, Edit, Send, Trash2, DollarSign, FileCheck, Loader2, FolderPlus } from 'lucide-react';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const [activeTab, setActiveTab] = useState<'details' | 'pdf' | 'payments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'pdf' | 'payments' | 'attachments'>('details');
+  const [showAddToGroup, setShowAddToGroup] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
   const addNotification = useAppStore(state => state.addNotification);
 
   const { data: invoice, isLoading } = api.invoice.getById.useQuery(
@@ -27,6 +31,50 @@ export default function InvoiceDetailPage() {
 
   const { data: company } = api.company.getCurrent.useQuery(undefined, {
     enabled: typeof window !== 'undefined', // Only run on client
+  });
+
+  const { data: groupsData } = api.invoiceGroup.list.useQuery(
+    { page: 1, limit: 100 },
+    { enabled: showAddToGroup }
+  );
+
+  const utils = api.useUtils();
+
+  const addToGroupMutation = api.invoiceGroup.addInvoice.useMutation({
+    onSuccess: () => {
+      addNotification({
+        type: 'success',
+        title: 'Added to Group',
+        message: 'Invoice has been added to the group successfully',
+      });
+      setShowAddToGroup(false);
+      setSelectedGroupId('');
+      utils.invoice.getById.invalidate({ id: id as string });
+    },
+    onError: (error) => {
+      addNotification({
+        type: 'error',
+        title: 'Failed to Add',
+        message: error.message,
+      });
+    },
+  });
+
+  const generateInvoiceMutation = api.invoice.generateInvoice.useMutation({
+    onSuccess: () => {
+      addNotification({
+        type: 'success',
+        title: 'Invoice Generated',
+        message: 'Invoice has been generated successfully',
+      });
+    },
+    onError: (error) => {
+      addNotification({
+        type: 'error',
+        title: 'Generation Failed',
+        message: error.message,
+      });
+    },
   });
 
   const sendInvoiceMutation = api.invoice.send.useMutation({
@@ -66,9 +114,19 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleAddToGroup = () => {
+    if (!selectedGroupId || !invoice) return;
+
+    addToGroupMutation.mutate({
+      groupId: selectedGroupId,
+      invoiceId: invoice.id,
+    });
+  };
+
   const getStatusColor = (status: string) => {
     const colors = {
       DRAFT: 'bg-gray-100 text-gray-800',
+      GENERATED: 'bg-purple-100 text-purple-800',
       SENT: 'bg-blue-100 text-blue-800',
       PAID: 'bg-green-100 text-green-800',
       PARTIALLY_PAID: 'bg-yellow-100 text-yellow-800',
@@ -151,14 +209,56 @@ export default function InvoiceDetailPage() {
             Edit
           </Button>
           {invoice.status === 'DRAFT' && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => generateInvoiceMutation.mutate({ id: invoice.id })}
+                disabled={generateInvoiceMutation.isPending}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                {generateInvoiceMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileCheck className="h-4 w-4" />
+                    Generate Invoice
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSendInvoice}
+                disabled={sendInvoiceMutation.isPending}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Send className="h-4 w-4" />
+                Generate & Send Email
+              </Button>
+            </>
+          )}
+          {(invoice.status === 'GENERATED' || invoice.status === 'SENT') && (
             <Button
               size="sm"
               onClick={handleSendInvoice}
               disabled={sendInvoiceMutation.isPending}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
             >
               <Send className="h-4 w-4" />
-              Send Invoice
+              {invoice.status === 'GENERATED' ? 'Send Email' : 'Resend Email'}
+            </Button>
+          )}
+          {!invoice.invoiceGroupId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddToGroup(!showAddToGroup)}
+              className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
+            >
+              <FolderPlus className="h-4 w-4" />
+              Add to Group
             </Button>
           )}
           <Button
@@ -173,6 +273,48 @@ export default function InvoiceDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Add to Group Form */}
+      {showAddToGroup && (
+        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 space-y-3">
+          <h3 className="font-semibold text-gray-900">Add to Invoice Group</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <select
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="">-- Select a group --</option>
+              {groupsData?.groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name} ({group.invoiceCount} invoices)
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAddToGroup}
+                disabled={!selectedGroupId || addToGroupMutation.isPending}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {addToGroupMutation.isPending ? 'Adding...' : 'Add to Group'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddToGroup(false);
+                  setSelectedGroupId('');
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Or <Link href="/invoice-groups" className="text-purple-600 hover:underline">create a new group</Link>
+          </p>
+        </div>
+      )}
 
       {/* Status and Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -237,6 +379,7 @@ export default function InvoiceDetailPage() {
             { key: 'details', label: 'Invoice Details' },
             { key: 'pdf', label: 'PDF View' },
             { key: 'payments', label: 'Payments' },
+            { key: 'attachments', label: 'Attachments' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -393,6 +536,10 @@ export default function InvoiceDetailPage() {
           invoiceId={invoice.id}
           customerId={invoice.customerId}
         />
+      )}
+
+      {activeTab === 'attachments' && (
+        <InvoiceAttachments invoiceId={invoice.id} />
       )}
     </div>
   );

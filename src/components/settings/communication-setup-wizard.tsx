@@ -476,7 +476,7 @@ function TestIntegrationStep({ data, onPrev }: StepProps) {
         // Redirect to dashboard or show success message
       }, 1000)
     },
-    isLoading: false,
+    isPending: false,
     error: null
   }
 
@@ -519,9 +519,9 @@ function TestIntegrationStep({ data, onPrev }: StepProps) {
           </Button>
           <Button
             onClick={() => finalizeSetup.mutate(data)}
-            disabled={finalizeSetup.isLoading}
+            disabled={finalizeSetup.isPending}
           >
-            {finalizeSetup.isLoading ? 'Activating...' : 'Activate Communication System'}
+            {finalizeSetup.isPending ? 'Activating...' : 'Activate Communication System'}
           </Button>
         </div>
       )}

@@ -37,6 +37,7 @@ model Company {
   complianceTemplates ComplianceTemplate[]
   complianceAlerts ComplianceAlert[]
   documents       Document[]
+  invoiceGroups   InvoiceGroup[]
 
   // Communication system relations
   settings        CompanySettings?
@@ -82,6 +83,18 @@ model Customer {
   preferredLanguage  String? @default("en")
   timezone          String? @default("Asia/Kolkata")
 
+  // CS Practice Comprehensive Fields
+  pan                String?  // PAN Number
+  cin                String?  // Corporate Identification Number
+  din                String?  // Director Identification Number (comma-separated if multiple)
+  incorporationDate  DateTime?
+  industry           String?  // Industry/sector
+  contactPerson      String?  // Primary contact person name
+  designation        String?  // Contact person designation
+  companyType        String?  // Private Limited, Public Limited, LLP, etc.
+  registeredOffice   String?  // Full registered office address
+  website            String?
+
   // Audit fields
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -94,6 +107,7 @@ model Customer {
   communications  Communication[]
   complianceItems ComplianceItem[]
   documents       Document[]
+  invoiceGroups   InvoiceGroup[]
 
   // Communication system relations
   communicationPreferences CommunicationPreference[]
@@ -115,6 +129,13 @@ model ServiceTemplate {
   hsnSac          String?
   category        String?
   companyId       String
+
+  // Custom fields for specialized CS services
+  customFields    Json?    // Array of field definitions for dynamic form rendering
+  // Example: [
+  //   { name: "cin", label: "CIN", type: "text", required: true },
+  //   { name: "registrationDate", label: "Registration Date", type: "date", required: true }
+  // ]
 
   // Audit fields
   createdAt       DateTime @default(now())
@@ -160,6 +181,9 @@ model Invoice {
   customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   lines           InvoiceLine[]
   payments        Payment[]
+  attachments     InvoiceAttachment[]
+  invoiceGroupId  String?
+  invoiceGroup    InvoiceGroup? @relation(fields: [invoiceGroupId], references: [id])
 
   // Performance indexes
   @@index([companyId, issueDate])
@@ -168,6 +192,33 @@ model Invoice {
   @@index([customerId])
 
   @@map("invoices")
+}
+
+model InvoiceAttachment {
+  id            String   @id @default(uuid())
+
+  // Relations
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  // File metadata
+  fileName      String   // Original filename (e.g., "MCA_G.A.R.7_Receipt.pdf")
+  fileSize      Int      // Size in bytes
+  fileType      String   // MIME type (e.g., "application/pdf")
+  storagePath   String   // Supabase storage path
+  storageUrl    String   // Public/signed URL
+
+  // Ordering & display
+  displayOrder  Int      @default(0)
+  description   String?  // Optional description (e.g., "MCA G.A.R.7 Receipt - June 2024")
+
+  // Audit
+  uploadedAt    DateTime @default(now())
+  uploadedBy    String?  // User ID who uploaded
+
+  @@index([invoiceId])
+  @@index([uploadedAt])
+  @@map("invoice_attachments")
 }
 
 model InvoiceLine {
@@ -181,6 +232,13 @@ model InvoiceLine {
   hsnSac          String?
   isReimbursement Boolean  @default(false)
   serviceTemplateId String?
+
+  // Custom field values for specialized services
+  customFieldData Json?    // Object with field values matching template's customFields
+  // Example: {
+  //   "cin": "U12345KA2020PTC123456",
+  //   "registrationDate": "2020-05-15"
+  // }
 
   // Relations
   invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
@@ -216,6 +274,37 @@ model Payment {
   @@index([invoiceId])
 
   @@map("payments")
+}
+
+model InvoiceGroup {
+  id              String   @id @default(uuid())
+  companyId       String
+  customerId      String?  // Optional - can group invoices across customers
+
+  // Group metadata
+  name            String   // e.g., "Q1 2024 Consolidated Invoice"
+  description     String?
+  groupType       String   @default("QUARTERLY") // QUARTERLY, MONTHLY, CUSTOM
+  periodStart     DateTime?
+  periodEnd       DateTime?
+
+  // Financial summary
+  totalAmount     Float    @default(0)
+  invoiceCount    Int      @default(0)
+
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+
+  // Relations
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  invoices        Invoice[]
+
+  @@index([companyId, createdAt])
+  @@index([customerId])
+  @@map("invoice_groups")
 }
 
 model RecurringContract {
@@ -441,6 +530,7 @@ enum UserRole {
 
 enum InvoiceStatus {
   DRAFT
+  GENERATED
   SENT
   PAID
   PARTIALLY_PAID

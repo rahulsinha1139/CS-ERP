@@ -11,7 +11,7 @@ import { useAppStore } from '@/store/app-store';
 import { AuraLayout } from '@/components/ui/aura-layout';
 import { AuraButton } from '@/components/ui/aura-button';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Search, Download, Send, Eye } from 'lucide-react';
+import { Search, Download, Send, Eye, FolderOpen } from 'lucide-react';
 import { PDFEngine } from '@/lib/pdf-engine';
 
 interface InvoiceFilters {
@@ -194,7 +194,7 @@ export default function InvoicesPage() {
         branding: {
           primaryColor: '#1e40af',
           accentColor: '#3b82f6',
-          logoPosition: 'left',
+          logoPosition: 'left' as const,
           showWatermark: invoice.status === 'SENT',
         },
         paymentDetails: company.bankName ? {
@@ -254,6 +254,13 @@ export default function InvoicesPage() {
 
   const headerActions = (
     <div className="flex items-center space-x-3">
+      <AuraButton
+        variant="secondary"
+        icon={<FolderOpen className="h-4 w-4" />}
+        onClick={() => window.location.href = '/invoice-groups'}
+      >
+        Invoice Groups
+      </AuraButton>
       <AuraButton
         variant="primary"
         icon={<PlusIcon />}
@@ -450,20 +457,20 @@ export default function InvoicesPage() {
                             <AuraButton
                               variant="secondary"
                               size="icon"
-                              className="h-8 w-8 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300"
+                              className="h-8 w-8 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
                               onClick={() => handleViewInvoice(invoice.id)}
                               title="View Invoice"
                             >
-                              <Eye className="h-4 w-4 text-blue-600" />
+                              <Eye className="h-4 w-4 text-black" />
                             </AuraButton>
                             <AuraButton
                               variant="secondary"
                               size="icon"
-                              className="h-8 w-8 bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300"
+                              className="h-8 w-8 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
                               onClick={() => handleDownloadInvoice(invoice.id, invoice.number)}
                               title="Download PDF"
                             >
-                              <Download className="h-4 w-4 text-green-600" />
+                              <Download className="h-4 w-4 text-black" />
                             </AuraButton>
                             {invoice.status === 'DRAFT' && (
                               <AuraButton

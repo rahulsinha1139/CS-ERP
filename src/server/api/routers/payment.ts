@@ -169,6 +169,7 @@ export const paymentRouter = createTRPCRouter({
           where: {
             companyId: ctx.companyId,
             customerId: input?.customerId,
+            status: { in: ['GENERATED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID', 'PAID'] }, // Exclude DRAFT
           },
           _sum: {
             grandTotal: true,
@@ -185,7 +186,7 @@ export const paymentRouter = createTRPCRouter({
           where: {
             companyId: ctx.companyId,
             customerId: input?.customerId,
-            status: { in: ['SENT', 'OVERDUE', 'PARTIALLY_PAID'] },
+            status: { in: ['GENERATED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID'] }, // Exclude DRAFT and PAID
           },
         });
 

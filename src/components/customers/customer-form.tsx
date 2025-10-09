@@ -20,6 +20,7 @@ const toast = {
 interface CustomerFormProps {
   onCancel?: () => void
   onSuccess?: (customerId: string) => void
+  customerId?: string  // For edit mode
   initialData?: {
     id?: string
     name?: string
@@ -34,7 +35,9 @@ interface CustomerFormProps {
   }
 }
 
-export default function CustomerForm({ onCancel, onSuccess, initialData }: CustomerFormProps) {
+export default function CustomerForm({ onCancel, onSuccess, customerId, initialData }: CustomerFormProps) {
+  const isEditMode = !!customerId || !!initialData?.id
+
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     email: initialData?.email || '',
@@ -45,6 +48,17 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
     creditLimit: initialData?.creditLimit || 0,
     creditDays: initialData?.creditDays || 30,
     whatsappNumber: initialData?.whatsappNumber || '',
+    // Comprehensive CS Practice Fields
+    pan: (initialData as any)?.pan || '',
+    cin: (initialData as any)?.cin || '',
+    din: (initialData as any)?.din || '',
+    incorporationDate: (initialData as any)?.incorporationDate || '',
+    industry: (initialData as any)?.industry || '',
+    contactPerson: (initialData as any)?.contactPerson || '',
+    designation: (initialData as any)?.designation || '',
+    companyType: (initialData as any)?.companyType || '',
+    registeredOffice: (initialData as any)?.registeredOffice || '',
+    website: (initialData as any)?.website || '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -62,6 +76,17 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
     }
   })
 
+  const updateCustomer = api.customer.update.useMutation({
+    onSuccess: (data) => {
+      toast.success('Customer updated successfully!')
+      onSuccess?.(data.id)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update customer')
+      setIsSubmitting(false)
+    }
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -73,20 +98,66 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
     setIsSubmitting(true)
 
     try {
-      await createCustomer.mutateAsync({
-        name: formData.name.trim(),
-        email: formData.email.trim() || undefined,
-        phone: formData.phone.trim() || undefined,
-        address: formData.address.trim() || undefined,
-        gstin: formData.gstin.trim() || undefined,
-        stateCode: formData.stateCode.trim() || undefined,
-        creditLimit: formData.creditLimit || undefined,
-        creditDays: formData.creditDays || undefined,
-        whatsappNumber: formData.whatsappNumber.trim() || undefined,
-      })
+      if (isEditMode) {
+        const idToUpdate = customerId || initialData?.id
+        if (!idToUpdate) {
+          toast.error('Customer ID is required for update')
+          setIsSubmitting(false)
+          return
+        }
+
+        await updateCustomer.mutateAsync({
+          id: idToUpdate,
+          data: {
+            name: formData.name.trim(),
+            email: formData.email.trim() || undefined,
+            phone: formData.phone.trim() || undefined,
+            address: formData.address.trim() || undefined,
+            gstin: formData.gstin.trim() || undefined,
+            stateCode: formData.stateCode.trim() || undefined,
+            creditLimit: formData.creditLimit || undefined,
+            creditDays: formData.creditDays || undefined,
+            whatsappNumber: formData.whatsappNumber.trim() || undefined,
+            // Comprehensive CS Practice Fields
+            pan: formData.pan.trim() || undefined,
+            cin: formData.cin.trim() || undefined,
+            din: formData.din.trim() || undefined,
+            incorporationDate: formData.incorporationDate ? new Date(formData.incorporationDate) : undefined,
+            industry: formData.industry.trim() || undefined,
+            contactPerson: formData.contactPerson.trim() || undefined,
+            designation: formData.designation.trim() || undefined,
+            companyType: formData.companyType.trim() || undefined,
+            registeredOffice: formData.registeredOffice.trim() || undefined,
+            website: formData.website.trim() || undefined,
+          }
+        })
+      } else {
+        await createCustomer.mutateAsync({
+          name: formData.name.trim(),
+          email: formData.email.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
+          address: formData.address.trim() || undefined,
+          gstin: formData.gstin.trim() || undefined,
+          stateCode: formData.stateCode.trim() || undefined,
+          creditLimit: formData.creditLimit || undefined,
+          creditDays: formData.creditDays || undefined,
+          whatsappNumber: formData.whatsappNumber.trim() || undefined,
+          // Comprehensive CS Practice Fields
+          pan: formData.pan.trim() || undefined,
+          cin: formData.cin.trim() || undefined,
+          din: formData.din.trim() || undefined,
+          incorporationDate: formData.incorporationDate ? new Date(formData.incorporationDate) : undefined,
+          industry: formData.industry.trim() || undefined,
+          contactPerson: formData.contactPerson.trim() || undefined,
+          designation: formData.designation.trim() || undefined,
+          companyType: formData.companyType.trim() || undefined,
+          registeredOffice: formData.registeredOffice.trim() || undefined,
+          website: formData.website.trim() || undefined,
+        })
+      }
     } catch (error) {
       // Error handling is done in the onError callback
-      console.error('Customer creation error:', error)
+      console.error('Customer operation error:', error)
     }
   }
 
@@ -259,6 +330,164 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
             </div>
           </div>
 
+          {/* CS Practice Comprehensive Fields */}
+          <div className="space-y-4 pt-6 border-t border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900">CS Practice Information</h3>
+
+            {/* Company Identifiers */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pan" className="text-sm font-medium text-slate-700">
+                  PAN Number
+                </Label>
+                <Input
+                  id="pan"
+                  type="text"
+                  value={formData.pan}
+                  onChange={(e) => handleInputChange('pan', e.target.value.toUpperCase())}
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cin" className="text-sm font-medium text-slate-700">
+                  CIN
+                </Label>
+                <Input
+                  id="cin"
+                  type="text"
+                  value={formData.cin}
+                  onChange={(e) => handleInputChange('cin', e.target.value.toUpperCase())}
+                  placeholder="U12345KA2020PTC123456"
+                  maxLength={21}
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="din" className="text-sm font-medium text-slate-700">
+                  DIN (comma-separated)
+                </Label>
+                <Input
+                  id="din"
+                  type="text"
+                  value={formData.din}
+                  onChange={(e) => handleInputChange('din', e.target.value)}
+                  placeholder="12345678, 87654321"
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Company Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyType" className="text-sm font-medium text-slate-700">
+                  Company Type
+                </Label>
+                <Input
+                  id="companyType"
+                  type="text"
+                  value={formData.companyType}
+                  onChange={(e) => handleInputChange('companyType', e.target.value)}
+                  placeholder="Private Limited, LLP, etc."
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="industry" className="text-sm font-medium text-slate-700">
+                  Industry/Sector
+                </Label>
+                <Input
+                  id="industry"
+                  type="text"
+                  value={formData.industry}
+                  onChange={(e) => handleInputChange('industry', e.target.value)}
+                  placeholder="IT, Manufacturing, etc."
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="incorporationDate" className="text-sm font-medium text-slate-700">
+                  Incorporation Date
+                </Label>
+                <Input
+                  id="incorporationDate"
+                  type="date"
+                  value={formData.incorporationDate}
+                  onChange={(e) => handleInputChange('incorporationDate', e.target.value)}
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Contact Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson" className="text-sm font-medium text-slate-700">
+                  Primary Contact Person
+                </Label>
+                <Input
+                  id="contactPerson"
+                  type="text"
+                  value={formData.contactPerson}
+                  onChange={(e) => handleInputChange('contactPerson', e.target.value)}
+                  placeholder="John Doe"
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="designation" className="text-sm font-medium text-slate-700">
+                  Designation
+                </Label>
+                <Input
+                  id="designation"
+                  type="text"
+                  value={formData.designation}
+                  onChange={(e) => handleInputChange('designation', e.target.value)}
+                  placeholder="Director, Manager, etc."
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Additional Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="registeredOffice" className="text-sm font-medium text-slate-700">
+                  Registered Office Address
+                </Label>
+                <Textarea
+                  id="registeredOffice"
+                  value={formData.registeredOffice}
+                  onChange={(e) => handleInputChange('registeredOffice', e.target.value)}
+                  placeholder="Full registered office address"
+                  rows={3}
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website" className="text-sm font-medium text-slate-700">
+                  Website
+                </Label>
+                <Input
+                  id="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  placeholder="https://example.com"
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
             {onCancel && (
@@ -281,12 +510,12 @@ export default function CustomerForm({ onCancel, onSuccess, initialData }: Custo
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  {isEditMode ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Create Customer
+                  {isEditMode ? 'Update Customer' : 'Create Customer'}
                 </>
               )}
             </Button>

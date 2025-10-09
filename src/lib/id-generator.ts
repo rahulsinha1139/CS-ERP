@@ -84,6 +84,11 @@ export const idGenerator = {
   invoiceLine: (): string => generate(),
 
   /**
+   * Generate ID for InvoiceAttachment entity
+   */
+  invoiceAttachment: (): string => generate(),
+
+  /**
    * Generate ID for Payment entity
    * Replaces: `pay_${Date.now()}`
    */

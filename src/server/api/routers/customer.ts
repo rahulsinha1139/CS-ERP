@@ -31,6 +31,17 @@ const createCustomerSchema = z.object({
   whatsappNumber: z.string().optional(),
   preferredLanguage: z.string().default('en'),
   timezone: z.string().default('Asia/Kolkata'),
+  // Comprehensive CS Practice Fields
+  pan: z.string().optional(),
+  cin: z.string().optional(),
+  din: z.string().optional(),
+  incorporationDate: z.date().optional(),
+  industry: z.string().optional(),
+  contactPerson: z.string().optional(),
+  designation: z.string().optional(),
+  companyType: z.string().optional(),
+  registeredOffice: z.string().optional(),
+  website: z.string().optional(),
 });
 
 // Utility functions for financial calculations
@@ -56,7 +67,7 @@ export const customerRouter = createTRPCRouter({
       const { page = 1, limit = 20, search, sortBy, sortOrder } = input;
       const offset = (page - 1) * limit;
 
-      const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.session?.user.companyId || '001' };
+      const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.companyId };
       if (search) {
         whereClause.OR = [
           { name: { contains: search, mode: 'insensitive' } },
@@ -443,7 +454,7 @@ export const customerRouter = createTRPCRouter({
       const { page = 1, limit = 20, search, sortBy, sortOrder } = input;
       const offset = (page - 1) * limit;
 
-      const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.session?.user.companyId || '001' };
+      const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.companyId };
       if (search) {
         whereClause.OR = [
           { name: { contains: search, mode: 'insensitive' } },

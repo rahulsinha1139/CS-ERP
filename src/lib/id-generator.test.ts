@@ -9,7 +9,7 @@
  * 4. Edge cases (concurrent access, stress test)
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { idGenerator, isValidUUID } from './id-generator';
 
 describe('ID Generator - Unit Tests', () => {

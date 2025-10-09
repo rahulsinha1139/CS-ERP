@@ -514,4 +514,98 @@ export const complianceRouter = createTRPCRouter({
       };
     }),
 
+  /**
+   * Delete a compliance item
+   */
+  delete: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.companyId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Company ID required',
+        });
+      }
+
+      // Verify the compliance belongs to this company
+      const compliance = await ctx.db.complianceItem.findFirst({
+        where: {
+          id: input.id,
+          companyId: ctx.companyId,
+        },
+      });
+
+      if (!compliance) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Compliance item not found',
+        });
+      }
+
+      // Delete the compliance item (cascade will handle related records)
+      await ctx.db.complianceItem.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Mark compliance as complete
+   */
+  markComplete: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      actualCost: z.number().optional(),
+      completionNotes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.companyId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Company ID required',
+        });
+      }
+
+      // Verify the compliance belongs to this company
+      const compliance = await ctx.db.complianceItem.findFirst({
+        where: {
+          id: input.id,
+          companyId: ctx.companyId,
+        },
+      });
+
+      if (!compliance) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Compliance item not found',
+        });
+      }
+
+      // Update compliance status to COMPLETED
+      const completedCompliance = await ctx.db.complianceItem.update({
+        where: { id: input.id },
+        data: {
+          status: 'COMPLETED',
+          completedDate: new Date(),
+          actualCost: input.actualCost,
+        },
+      });
+
+      // Create activity log
+      await ctx.db.complianceActivity.create({
+        data: {
+          complianceId: input.id,
+          activityType: 'COMPLETED',
+          description: input.completionNotes || 'Compliance item marked as completed',
+          activityDate: new Date(),
+          performedBy: 'System',
+        },
+      });
+
+      return completedCompliance;
+    }),
+
 });

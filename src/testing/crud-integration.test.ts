@@ -11,11 +11,12 @@ import { idGenerator } from '@/lib/id-generator';
 const prisma = new PrismaClient();
 
 // Test data
+const companyId = 'c1ad463d-13a4-4b11-9a4f-a8ab5d3c979b'; // From seed
 let testCustomerId: string;
 let testInvoiceId: string;
 let testPaymentId: string;
 
-describe('CRUD Integration Tests - Customer Module', () => {
+describe('CRUD Integration Tests', () => {
   beforeAll(async () => {
     // Clean up any existing test data
     await prisma.payment.deleteMany({ where: { customer: { name: { contains: 'TEST_CRUD' } } } });
@@ -31,6 +32,8 @@ describe('CRUD Integration Tests - Customer Module', () => {
     await prisma.$disconnect();
   });
 
+  describe('Customer Module', () => {
+
   it('CREATE - Should create a new customer', async () => {
     const customer = await prisma.customer.create({
       data: {
@@ -39,15 +42,8 @@ describe('CRUD Integration Tests - Customer Module', () => {
         email: 'crud-test@example.com',
         phone: '+91-9876543210',
         gstin: '29ABCDE1234F1Z5',
-        pan: 'ABCDE1234F',
-        address: {
-          line1: '123 Test Street',
-          city: 'Bangalore',
-          state: 'Karnataka',
-          postalCode: '560001',
-          country: 'India'
-        },
-        status: 'ACTIVE'
+        stateCode: '29',
+        companyId,
       }
     });
 
@@ -99,35 +95,38 @@ describe('CRUD Integration Tests - Customer Module', () => {
     expect(updated.email).toBe('updated-crud@example.com');
     console.log('✓ Customer updated:', updated.id);
   });
-});
+  });
 
-describe('CRUD Integration Tests - Invoice Module', () => {
+  describe('Invoice Module', () => {
   it('CREATE - Should create a new invoice', async () => {
     const invoice = await prisma.invoice.create({
       data: {
         id: idGenerator.invoice(),
         number: 'INV-CRUD-001',
         customerId: testCustomerId,
+        companyId,
         issueDate: new Date(),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         status: 'DRAFT',
-        items: [
-          {
+        subtotal: 10000,
+        cgstAmount: 900,
+        sgstAmount: 900,
+        igstAmount: 0,
+        totalTax: 1800,
+        grandTotal: 11800,
+        paidAmount: 0,
+        lines: {
+          create: [{
+            id: idGenerator.generate(),
             description: 'Company Incorporation Services',
             quantity: 1,
             rate: 10000,
             amount: 10000,
-            hsnSac: '998399'
-          }
-        ],
-        subtotal: 10000,
-        cgst: 900,
-        sgst: 900,
-        igst: 0,
-        totalTax: 1800,
-        grandTotal: 11800,
-        paidAmount: 0,
-        balanceAmount: 11800
+            hsnSac: '998399',
+            gstRate: 18,
+            isReimbursement: false,
+          }]
+        }
       }
     });
 
@@ -182,28 +181,11 @@ describe('CRUD Integration Tests - Invoice Module', () => {
     const updated = await prisma.invoice.update({
       where: { id: testInvoiceId },
       data: {
-        items: [
-          {
-            description: 'Company Incorporation Services',
-            quantity: 1,
-            rate: 10000,
-            amount: 10000,
-            hsnSac: '998399'
-          },
-          {
-            description: 'Annual Compliance Services',
-            quantity: 1,
-            rate: 5000,
-            amount: 5000,
-            hsnSac: '998399'
-          }
-        ],
         subtotal: 15000,
-        cgst: 1350,
-        sgst: 1350,
+        cgstAmount: 1350,
+        sgstAmount: 1350,
         totalTax: 2700,
         grandTotal: 17700,
-        balanceAmount: 17700
       }
     });
 
@@ -211,15 +193,16 @@ describe('CRUD Integration Tests - Invoice Module', () => {
     expect(updated.subtotal).toBe(15000);
     console.log('✓ Invoice totals recalculated');
   });
-});
+  });
 
-describe('CRUD Integration Tests - Payment Module', () => {
+  describe('Payment Module', () => {
   it('CREATE - Should record a payment', async () => {
     const payment = await prisma.payment.create({
       data: {
         id: idGenerator.payment(),
         customerId: testCustomerId,
         invoiceId: testInvoiceId,
+        companyId,
         amount: 10000,
         paymentDate: new Date(),
         method: 'BANK_TRANSFER',
@@ -241,13 +224,11 @@ describe('CRUD Integration Tests - Payment Module', () => {
       where: { id: testInvoiceId },
       data: {
         paidAmount: 10000,
-        balanceAmount: 7700,
         status: 'PARTIALLY_PAID'
       }
     });
 
     expect(invoice.paidAmount).toBe(10000);
-    expect(invoice.balanceAmount).toBe(7700);
     expect(invoice.status).toBe('PARTIALLY_PAID');
     console.log('✓ Invoice updated with payment');
   });
@@ -281,8 +262,10 @@ describe('CRUD Integration Tests - Payment Module', () => {
   it('CREATE - Should record second payment to complete invoice', async () => {
     const payment2 = await prisma.payment.create({
       data: {
+        id: idGenerator.payment(),
         customerId: testCustomerId,
         invoiceId: testInvoiceId,
+        companyId,
         amount: 7700,
         paymentDate: new Date(),
         method: 'UPI',
@@ -299,21 +282,19 @@ describe('CRUD Integration Tests - Payment Module', () => {
       where: { id: testInvoiceId },
       data: {
         paidAmount: 17700,
-        balanceAmount: 0,
         status: 'PAID'
       }
     });
 
     expect(invoice.status).toBe('PAID');
-    expect(invoice.balanceAmount).toBe(0);
     console.log('✓ Invoice marked as PAID');
 
     // Clean up second payment
     await prisma.payment.delete({ where: { id: payment2.id } });
   });
-});
+  });
 
-describe('CRUD Integration Tests - Advanced Queries', () => {
+  describe('Advanced Queries', () => {
   it('Should get customer with financial summary', async () => {
     const customer = await prisma.customer.findUnique({
       where: { id: testCustomerId },
@@ -322,7 +303,6 @@ describe('CRUD Integration Tests - Advanced Queries', () => {
           select: {
             grandTotal: true,
             paidAmount: true,
-            balanceAmount: true,
             status: true
           }
         },
@@ -378,9 +358,9 @@ describe('CRUD Integration Tests - Advanced Queries', () => {
       totalInvoiced: result._sum.grandTotal
     });
   });
-});
+  });
 
-describe('CRUD Integration Tests - DELETE Operations', () => {
+  describe('DELETE Operations', () => {
   it('DELETE - Should delete payment', async () => {
     await prisma.payment.delete({
       where: { id: testPaymentId }
@@ -418,5 +398,6 @@ describe('CRUD Integration Tests - DELETE Operations', () => {
 
     expect(customer).toBeNull();
     console.log('✓ Customer deleted');
+  });
   });
 });

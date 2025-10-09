@@ -13,6 +13,9 @@ import { AuraSelect } from '@/components/ui/aura-select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { ComplianceFormModal } from '@/components/compliance/compliance-form-modal';
+import { ComplianceDetailsModal } from '@/components/compliance/compliance-details-modal';
+import { ComplianceDeleteDialog } from '@/components/compliance/compliance-delete-dialog';
 import {
   Calendar,
   AlertTriangle,
@@ -63,6 +66,11 @@ export default function ComplianceDashboard() {
   const [dateRange, setDateRange] = useState<'thisWeek' | 'thisMonth' | 'thisQuarter' | 'thisYear'>('thisMonth');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'pending' | 'overdue' | 'upcoming'>('overview');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedComplianceId, setSelectedComplianceId] = useState<string | undefined>(undefined);
+  const [complianceToDelete, setComplianceToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch dashboard data
   const { data: dashboardData, isLoading } = (api as any).compliance.getDashboard.useQuery({
@@ -76,10 +84,40 @@ export default function ComplianceDashboard() {
     category: selectedCategory || undefined,
   });
 
+  const utils = api.useUtils();
+
   // Initialize default templates mutation
   const initializeTemplatesMutation = (api as any).compliance.initializeDefaultTemplates.useMutation({
     onSuccess: (data: any) => {
       console.log(`Initialized ${data.created} compliance templates`);
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = (api as any).compliance.delete.useMutation({
+    onSuccess: () => {
+      utils.compliance.getAll.invalidate();
+      utils.compliance.getDashboard.invalidate();
+      setIsDeleteDialogOpen(false);
+      setComplianceToDelete(null);
+    },
+    onError: (error: any) => {
+      console.error('Failed to delete compliance:', error);
+      alert('Failed to delete compliance item. Please try again.');
+    },
+  });
+
+  // Mark as complete mutation
+  const markCompleteMutation = (api as any).compliance.markComplete.useMutation({
+    onSuccess: () => {
+      utils.compliance.getAll.invalidate();
+      utils.compliance.getDashboard.invalidate();
+      utils.compliance.getById.invalidate({ id: selectedComplianceId! });
+      setIsViewModalOpen(false);
+    },
+    onError: (error: any) => {
+      console.error('Failed to mark compliance as complete:', error);
+      alert('Failed to mark compliance as complete. Please try again.');
     },
   });
 
@@ -160,7 +198,10 @@ export default function ComplianceDashboard() {
       </AuraButton>
       <AuraButton
         variant="primary"
-        onClick={() => console.log('Create new compliance')}
+        onClick={() => {
+          setSelectedComplianceId(undefined);
+          setIsCreateModalOpen(true);
+        }}
         icon={<Plus className="h-4 w-4" />}
       >
         New Compliance
@@ -438,10 +479,24 @@ export default function ComplianceDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedComplianceId(item.id);
+                            setIsViewModalOpen(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedComplianceId(item.id);
+                            setIsCreateModalOpen(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -507,6 +562,58 @@ export default function ComplianceDashboard() {
       </div>
         </div>
       </AuraLayout>
+
+      {/* Create/Edit Compliance Modal */}
+      <ComplianceFormModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        complianceId={selectedComplianceId}
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          setSelectedComplianceId(undefined);
+        }}
+      />
+
+      {/* View Compliance Details Modal */}
+      {selectedComplianceId && (
+        <ComplianceDetailsModal
+          open={isViewModalOpen}
+          onOpenChange={setIsViewModalOpen}
+          complianceId={selectedComplianceId}
+          onEdit={() => {
+            setIsViewModalOpen(false);
+            setIsCreateModalOpen(true);
+          }}
+          onDelete={() => {
+            const compliance = [...upcomingDeadlines, ...overdueItems].find(c => c.id === selectedComplianceId);
+            if (compliance) {
+              setComplianceToDelete({ id: compliance.id, name: compliance.title });
+              setIsViewModalOpen(false);
+              setIsDeleteDialogOpen(true);
+            }
+          }}
+          onMarkComplete={() => {
+            if (selectedComplianceId) {
+              markCompleteMutation.mutate({ id: selectedComplianceId });
+            }
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {complianceToDelete && (
+        <ComplianceDeleteDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          complianceName={complianceToDelete.name}
+          onConfirm={() => {
+            if (complianceToDelete) {
+              deleteMutation.mutate({ id: complianceToDelete.id });
+            }
+          }}
+          isDeleting={deleteMutation.isLoading}
+        />
+      )}
     </>
   );
 }

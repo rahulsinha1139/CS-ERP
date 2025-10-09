@@ -322,16 +322,6 @@ const PaymentTracker = React.memo(function PaymentTracker({ customerId, invoiceI
         </AuraCardContent>
       </AuraCard>
 
-      {/* Record Payment Button */}
-      <AuraButton
-        onClick={() => setShowForm(!showForm)}
-        variant="primary"
-        icon={<Plus className="h-5 w-5" />}
-        className="w-full py-4 text-lg font-semibold"
-      >
-        Record New Payment
-      </AuraButton>
-
       {/* Payment History */}
       <AuraCard>
         <AuraCardHeader>

@@ -45,6 +45,7 @@ const createInvoiceSchema = z.object({
     hsnSac: z.string().optional(),
     serviceTemplateId: z.string().optional(),
     isReimbursement: z.boolean().default(false),
+    customFieldData: z.record(z.any()).optional(),
   })),
   placeOfSupply: z.string().optional(),
   notes: z.string().optional(),
@@ -64,18 +65,19 @@ const updateInvoiceSchema = z.object({
     hsnSac: z.string().optional(),
     serviceTemplateId: z.string().optional(),
     isReimbursement: z.boolean().default(false),
+    customFieldData: z.record(z.any()).optional(),
   })).optional(),
   placeOfSupply: z.string().optional(),
   notes: z.string().optional(),
   terms: z.string().optional(),
-  status: z.enum(['DRAFT', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional(),
+  status: z.enum(['DRAFT', 'GENERATED', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional(),
 });
 
 const paginationSchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
   filters: z.object({
-    status: z.enum(['DRAFT', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional(),
+    status: z.enum(['DRAFT', 'GENERATED', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional(),
     customerId: z.string().optional(),
     startDate: z.date().optional(),
     endDate: z.date().optional(),
@@ -307,7 +309,7 @@ export const invoiceRouter = createTRPCRouter({
           ...amounts,
           lines: {
             create: input.lines.map((line) => ({
-              id: idGenerator.invoiceLine(), // ✅ UUID v4 - No race conditions
+              id: idGenerator.invoiceLine(),
               description: line.description,
               quantity: line.quantity,
               rate: line.rate,
@@ -316,6 +318,7 @@ export const invoiceRouter = createTRPCRouter({
               ...(line.hsnSac && line.hsnSac.trim() !== '' ? { hsnSac: line.hsnSac } : {}),
               isReimbursement: line.isReimbursement,
               ...(line.serviceTemplateId && line.serviceTemplateId.trim() !== '' ? { serviceTemplateId: line.serviceTemplateId } : {}),
+              ...(line.customFieldData ? { customFieldData: line.customFieldData as any } : {}),
             })),
           },
         },
@@ -698,5 +701,56 @@ export const invoiceRouter = createTRPCRouter({
         issueDate: invoice.issueDate,
         dueDate: invoice.dueDate,
       }));
+    }),
+
+  // Generate invoice (activate without sending email)
+  generateInvoice: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // 1. Verify invoice exists and is DRAFT
+      const invoice = await ctx.db.invoice.findUnique({
+        where: { id: input.id },
+        include: { lines: true, customer: true }
+      });
+
+      if (!invoice) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Invoice not found',
+        });
+      }
+
+      if (invoice.companyId !== ctx.companyId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied',
+        });
+      }
+
+      if (invoice.status !== 'DRAFT') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only DRAFT invoices can be generated',
+        });
+      }
+
+      // 2. Update status to GENERATED
+      const updatedInvoice = await ctx.db.invoice.update({
+        where: { id: input.id },
+        data: {
+          status: 'GENERATED',
+          updatedAt: new Date(),
+        },
+        include: {
+          lines: true,
+          customer: true,
+          company: true,
+          payments: true,
+        }
+      });
+
+      return updatedInvoice;
     }),
 });

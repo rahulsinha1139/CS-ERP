@@ -73,7 +73,7 @@ export default function ClientCommunicationSetup({
         onComplete?.()
       }, 1500)
     },
-    isLoading: false,
+    isPending: false,
     error: null
   }
 
@@ -370,9 +370,9 @@ export default function ClientCommunicationSetup({
               </Button>
               <Button
                 type="submit"
-                disabled={updatePreferences.isLoading}
+                disabled={updatePreferences.isPending}
               >
-                {updatePreferences.isLoading ? 'Saving...' : 'Save Preferences'}
+                {updatePreferences.isPending ? 'Saving...' : 'Save Preferences'}
               </Button>
             </div>
           </Card>

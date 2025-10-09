@@ -151,9 +151,10 @@ export class InvoiceEngine {
   generateInvoiceNumber(companyPrefix: string = 'INV', year?: number): string {
     const currentYear = year || new Date().getFullYear();
     const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
 
-    // Use golden ratio for aesthetic number generation
-    const goldenSequence = Math.floor(timestamp * 1.618033988) % 10000;
+    // Use golden ratio + random for unique aesthetic number generation
+    const goldenSequence = Math.floor((timestamp + random) * 1.618033988) % 10000;
 
     return `${companyPrefix}-${currentYear}-${goldenSequence.toString().padStart(4, '0')}`;
   }

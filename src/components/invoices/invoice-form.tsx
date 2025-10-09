@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { api } from '@/utils/api';
 import { gstEngine } from '../../lib/gst-engine';
+import { useDebounce } from '@/hooks/useDebounce';
 import { AuraCard, AuraCardContent } from '../ui/aura-card';
 import { AuraButton } from '../ui/aura-button';
 import { AuraInput } from '../ui/aura-input';
@@ -32,6 +33,7 @@ const invoiceFormSchema = z.object({
     gstRate: z.number().min(0).max(100),
     hsnSac: z.string().optional(),
     serviceTemplateId: z.string().optional(),
+    customFieldData: z.record(z.any()).optional(),
   })).min(1, 'At least one line item is required'),
 });
 
@@ -54,11 +56,12 @@ interface CalculationResult {
 
 interface InvoiceFormProps {
   invoiceId?: string;
+  initialCustomerId?: string;
   onSuccess?: (invoice: { id: string }) => void;
   onCancel?: () => void;
 }
 
-function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
+function InvoiceForm({ invoiceId, initialCustomerId, onSuccess, onCancel }: InvoiceFormProps) {
   const [calculationResults, setCalculationResults] = useState<CalculationResult[]>([]);
   const [invoiceTotals, setInvoiceTotals] = useState({
     subtotal: 0,
@@ -84,6 +87,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
+      customerId: initialCustomerId || '',
       issueDate: new Date().toISOString().split('T')[0],
       lines: [{
         description: '',
@@ -123,9 +127,12 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
   const watchedLines = form.watch('lines');
   const placeOfSupply = form.watch('placeOfSupply');
 
-  // Real-time GST calculations
+  // Debounced line items for smooth calculation (300ms delay)
+  const debouncedLines = useDebounce(watchedLines, 300);
+
+  // Real-time GST calculations with debounce
   useEffect(() => {
-    if (!company || !watchedLines?.length) {
+    if (!company || !debouncedLines?.length) {
       setCalculationResults([]);
       setInvoiceTotals({
         subtotal: 0,
@@ -140,7 +147,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
       return;
     }
 
-    const results = watchedLines.map((line) => {
+    const results = debouncedLines.map((line) => {
       // Calculate even if description is empty, as long as we have quantity and rate
       if (line.quantity === undefined || line.quantity <= 0 || line.rate === undefined) {
         return {
@@ -182,7 +189,7 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
       grandTotal: totals.grandTotal,
       isInterstate,
     });
-  }, [watchedLines, company, selectedCustomer, placeOfSupply]);
+  }, [debouncedLines, company, selectedCustomer, placeOfSupply]);
 
   // Mutations
     const createInvoiceMutation = api.invoice.create.useMutation({
@@ -267,9 +274,9 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
     const template = serviceTemplates?.find((t) => t.id.toString() === templateId);
     if (template) {
       form.setValue(`lines.${lineIndex}.description`, template.name);
-      form.setValue(`lines.${lineIndex}.rate`, template.baseAmount);
+      form.setValue(`lines.${lineIndex}.rate`, template.defaultRate);
       form.setValue(`lines.${lineIndex}.gstRate`, template.gstRate);
-      form.setValue(`lines.${lineIndex}.hsnSac`, template.hsn || '');
+      form.setValue(`lines.${lineIndex}.hsnSac`, template.hsnSac || '');
       // Note: We don't set serviceTemplateId because templates are mock data, not in DB
     }
   };
@@ -288,9 +295,9 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
       createServiceMutation.mutate({
         name: customService.name,
         description: customService.name,
-        baseAmount: customService.rate,
+        defaultRate: customService.rate,
         gstRate: customService.gstRate,
-        hsn: customService.hsnSac,
+        hsnSac: customService.hsnSac,
         category: 'custom',
       });
     }
@@ -525,6 +532,16 @@ function InvoiceForm({ invoiceId, onSuccess, onCancel }: InvoiceFormProps) {
                 )}
               </div>
             ))}
+
+            {/* Add Line Item Button */}
+            <button
+              type="button"
+              onClick={addLineItem}
+              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 font-medium"
+            >
+              <Plus className="h-5 w-5" />
+              Add Line Item
+            </button>
           </div>
         </AuraCardContent>
       </AuraCard>

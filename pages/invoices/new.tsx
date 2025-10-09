@@ -12,6 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function NewInvoicePage() {
   const router = useRouter();
+  const { customerId } = router.query;
 
   const handleSuccess = (invoice: { id: string }) => {
     // Navigate to invoice detail page or back to list
@@ -44,6 +45,7 @@ export default function NewInvoicePage() {
       <AuraCard>
         <AuraCardContent className="p-6">
           <InvoiceForm
+            initialCustomerId={customerId as string}
             onSuccess={handleSuccess}
             onCancel={handleCancel}
           />
