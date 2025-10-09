@@ -1,6 +1,59 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4 Theme Configuration */
+@theme {
+  /* Custom spacing for sidebar */
+  --spacing-18: 4.5rem;  /* 72px - collapsed sidebar */
+  --spacing-60: 15rem;   /* 240px - expanded sidebar */
+
+  /* Gray color scale */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Blue color scale */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+
+  /* Royal Blue color scale (replacing yellow) */
+  --color-yellow-50: #eff6ff;
+  --color-yellow-100: #dbeafe;
+  --color-yellow-200: #bfdbfe;
+  --color-yellow-300: #93c5fd;
+  --color-yellow-400: #60a5fa;
+  --color-yellow-500: #3b82f6;
+  --color-yellow-600: #2563eb;
+  --color-yellow-700: #1d4ed8;
+  --color-yellow-800: #1e40af;
+  --color-yellow-900: #1e3a8a;
+
+  /* Indigo color scale */
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+}
 
 /*
  * McKinsey-Grade Professional Design System
@@ -13,67 +66,85 @@
   --phi: var(--golden-ratio);
   --inverse-phi: 0.618;
 
-  /* Professional color palette - Royal Blue + Clean White */
-  --background: 255 255 255;
-  --foreground: 15 23 42;
-  --card: 255 255 255;
-  --card-foreground: 15 23 42;
-  --popover: 255 255 255;
-  --popover-foreground: 15 23 42;
+  /* AURA DESIGN SYSTEM - Professional Digital Desk */
 
-  /* Primary: Royal Blue - authority and professionalism */
-  --primary: 65 105 225;
-  --primary-foreground: 255 255 255;
+  /* Core Color Palette */
+  --aura-blue-primary: 65 105 225;    /* Royal Blue - Authority */
+  --aura-blue-secondary: 79 109 245;  /* Lighter blue for hover states */
+  --aura-white: 255 255 255;          /* Pure white backgrounds */
+  --aura-gray-50: 249 250 251;        /* Surface backgrounds */
+  --aura-gray-100: 243 244 246;       /* Card backgrounds */
+  --aura-gray-200: 229 231 235;       /* Borders */
+  --aura-gray-300: 209 213 219;       /* Dividers */
+  --aura-gray-400: 156 163 175;       /* Disabled text */
+  --aura-gray-500: 107 114 128;       /* Secondary text */
+  --aura-gray-600: 75 85 99;          /* Primary text */
+  --aura-gray-700: 55 65 81;          /* Headings */
+  --aura-gray-800: 31 41 55;          /* High contrast text */
+  --aura-gray-900: 17 24 39;          /* Maximum contrast */
 
-  /* Secondary: Warm neutral - professional warmth */
-  --secondary: 248 250 252;
-  --secondary-foreground: 30 41 59;
+  /* Semantic Status Colors */
+  --aura-success: 34 197 94;          /* Green for positive states */
+  --aura-warning: 37 99 235;          /* Royal Blue for warnings (replaced amber) */
+  --aura-error: 239 68 68;            /* Red for errors */
+  --aura-info: 59 130 246;            /* Blue for information */
 
-  /* Muted: Subtle backgrounds */
-  --muted: 248 250 252;
-  --muted-foreground: 100 116 139;
+  /* Legacy compatibility - mapped to Aura tokens */
+  --background: var(--aura-white);
+  --foreground: var(--aura-gray-800);
+  --card: var(--aura-white);
+  --card-foreground: var(--aura-gray-800);
+  --popover: var(--aura-white);
+  --popover-foreground: var(--aura-gray-800);
 
-  /* Accent: Highlight color */
-  --accent: 241 245 249;
-  --accent-foreground: 15 23 42;
+  /* Primary mapped to Aura blue */
+  --primary: var(--aura-blue-primary);
+  --primary-foreground: var(--aura-white);
 
-  /* Semantic colors */
-  --success: 34 197 94;
-  --success-foreground: 255 255 255;
-  --warning: 245 158 11;
-  --warning-foreground: 255 255 255;
-  --destructive: 239 68 68;
-  --destructive-foreground: 255 255 255;
+  /* Surface hierarchy */
+  --surface-primary: var(--aura-white);
+  --surface-secondary: var(--aura-gray-50);
+  --surface-tertiary: var(--aura-gray-100);
 
-  /* Border and inputs */
-  --border: 226 232 240;
-  --input: 255 255 255;
-  --ring: 65 105 225;
+  /* Text hierarchy */
+  --text-primary: var(--aura-gray-800);
+  --text-secondary: var(--aura-gray-600);
+  --text-tertiary: var(--aura-gray-500);
+  --text-disabled: var(--aura-gray-400);
+
+  /* Border hierarchy */
+  --border-primary: var(--aura-gray-200);
+  --border-secondary: var(--aura-gray-300);
+  --border-focus: var(--aura-blue-primary);
+
+  /* Legacy mappings */
+  --secondary: var(--aura-gray-50);
+  --secondary-foreground: var(--aura-gray-700);
+  --muted: var(--aura-gray-100);
+  --muted-foreground: var(--aura-gray-500);
+  --accent: var(--aura-gray-50);
+  --accent-foreground: var(--aura-gray-800);
+  --success: var(--aura-success);
+  --success-foreground: var(--aura-white);
+  --warning: var(--aura-warning);
+  --warning-foreground: var(--aura-white);
+  --destructive: var(--aura-error);
+  --destructive-foreground: var(--aura-white);
+  --border: var(--border-primary);
+  --input: var(--aura-white);
+  --ring: var(--aura-blue-primary);
   --radius: 0.5rem;
+
+  /* Professional spacing scale (mathematical progression) */
+  --space-xs: 0.25rem;                /* 4px */
+  --space-sm: 0.5rem;                 /* 8px */
+  --space-md: 1rem;                   /* 16px */
+  --space-lg: calc(var(--phi) * 1rem); /* 25.9px (golden ratio) */
+  --space-xl: calc(var(--phi) * 1.5rem); /* 38.8px */
+  --space-2xl: calc(var(--phi) * 2rem);  /* 51.8px */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark mode - maintaining professional standards */
-    --background: 255 255 255;
-    --foreground: 248 250 252;
-    --card: 255 255 255;
-    --card-foreground: 248 250 252;
-    --popover: 255 255 255;
-    --popover-foreground: 248 250 252;
-    --primary: 65 105 225;
-    --primary-foreground: 255 255 255;
-    --secondary: 30 41 59;
-    --secondary-foreground: 248 250 252;
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
-    --accent: 30 41 59;
-    --accent-foreground: 248 250 252;
-    --border: 30 41 59;
-    --input: 30 41 59;
-    --ring: 65 105 225;
-  }
-}
+/* Dark mode disabled - using light theme only for professional consistency */
 
 /* Base styles - professional foundation */
 * {
@@ -97,14 +168,38 @@ html {
 
 body {
   height: 100%;
-  background: white !important;
-  color: hsl(var(--foreground));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  background-color: #F7FAFC; /* surface-secondary */
+  background: #F7FAFC;
+  color: #4A5568; /* text-secondary */
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "pnum" 1, "tnum" 0, "onum" 1, "lnum" 0, "dlig" 0;
+  font-weight: 400;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   position: relative;
+}
+
+/* Ensure headings have high contrast */
+h1, h2, h3, h4, h5, h6 {
+  color: #1A202C; /* text-primary */
+}
+
+/* Force white background on all major container elements */
+html {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+#__next {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  min-height: 100vh;
+}
+
+/* Ensure Tailwind background utilities use white */
+.bg-background {
+  background-color: #ffffff !important;
 }
 
 
@@ -115,10 +210,37 @@ body {
   border-radius: calc(var(--radius) * 0.5);
 }
 
-/* Professional animations - golden ratio timing */
+/* AURA MOTION SYSTEM */
+/* Fast, interruptible animations under 250ms with ease-out easing */
 * {
-  transition-timing-function: cubic-bezier(0.618, 0, 0.382, 1);
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1); /* ease-out */
   transition-duration: 200ms;
+}
+
+/* Aura-specific motion classes */
+.aura-transition-fast {
+  transition: all 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.aura-transition-medium {
+  transition: all 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.aura-transition-slow {
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Interruptible animations */
+.aura-animate-fade-in {
+  animation: auraFadeIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.aura-animate-slide-up {
+  animation: auraSlideUp 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.aura-animate-scale-in {
+  animation: auraScaleIn 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* Enhanced scrollbar - professional styling */
@@ -274,7 +396,41 @@ body {
   }
 }
 
-/* Professional animations */
+/* AURA KEYFRAMES - Fast, professional animations */
+@keyframes auraFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auraSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auraScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Legacy animations for compatibility */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -533,6 +689,7 @@ button:disabled {
 
 /* Professional navigation states */
 .nav-item-active {
+  position: relative;
   background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--primary) / 0.05) 100%);
   border-left: 3px solid hsl(var(--primary));
   color: hsl(var(--primary));

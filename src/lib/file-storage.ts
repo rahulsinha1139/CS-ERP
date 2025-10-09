@@ -76,7 +76,7 @@ export class FileStorageEngine {
     originalName: string,
     mimetype: string,
     category: 'documents' | 'invoices' | 'temp' = 'documents',
-    uploadedBy: string
+    _uploadedBy: string
   ): Promise<FileUploadResult> {
     try {
       // Validate file
@@ -106,10 +106,10 @@ export class FileStorageEngine {
         path: filePath,
       };
 
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: _error instanceof Error ? _error.message : 'Unknown error',
       };
     }
   }
@@ -188,7 +188,7 @@ export class FileStorageEngine {
         path: filePath,
       };
 
-    } catch (error) {
+    } catch (_error) {
       return { exists: false };
     }
   }
@@ -321,7 +321,7 @@ export class FileStorageEngine {
         stats.totalFiles += files.length;
         stats.totalSize += categorySize;
 
-      } catch (error) {
+      } catch (_error) {
         stats.categorySizes[category] = { files: 0, size: 0 };
       }
     }

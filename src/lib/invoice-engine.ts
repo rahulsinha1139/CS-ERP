@@ -78,6 +78,15 @@ export interface PaymentData {
   notes?: string;
 }
 
+// Context interfaces for state transitions
+export interface StateTransitionContext {
+  payment?: PaymentData;
+  notes?: string;
+  timestamp?: Date;
+  userId?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export class InvoiceEngine {
   private static instance: InvoiceEngine;
 
@@ -142,9 +151,10 @@ export class InvoiceEngine {
   generateInvoiceNumber(companyPrefix: string = 'INV', year?: number): string {
     const currentYear = year || new Date().getFullYear();
     const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
 
-    // Use golden ratio for aesthetic number generation
-    const goldenSequence = Math.floor(timestamp * 1.618033988) % 10000;
+    // Use golden ratio + random for unique aesthetic number generation
+    const goldenSequence = Math.floor((timestamp + random) * 1.618033988) % 10000;
 
     return `${companyPrefix}-${currentYear}-${goldenSequence.toString().padStart(4, '0')}`;
   }
@@ -163,7 +173,7 @@ export class InvoiceEngine {
   transitionState(
     invoice: CalculatedInvoice,
     newState: InvoiceState,
-    context?: any
+    context?: StateTransitionContext
   ): CalculatedInvoice {
     if (!this.canTransitionTo(invoice.state, newState)) {
       throw new Error(
@@ -303,7 +313,7 @@ export class InvoiceEngine {
   private performStateActions(
     invoice: CalculatedInvoice,
     newState: InvoiceState,
-    context?: any
+    context?: StateTransitionContext
   ): CalculatedInvoice {
     switch (newState) {
       case InvoiceState.SENT:

@@ -5,17 +5,33 @@
 
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { api } from '@/lib/trpc-client'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { Alert } from '../ui/alert'
 
+interface CommunicationPreferences {
+  email?: string
+  phone?: string
+  whatsappNumber?: string
+  emailOptIn?: boolean
+  whatsappOptIn?: boolean
+  smsOptIn?: boolean
+  language?: string
+  timezone?: string
+  preferredLanguage?: string
+  paymentReminders?: string
+  reminderFrequency?: string
+  quietHours?: { start: string; end: string }
+  invoiceDelivery?: string
+  complianceReminders?: string
+}
+
 interface ClientCommunicationSetupProps {
   customerId: string
   customerName: string
-  currentPreferences?: any
+  currentPreferences?: CommunicationPreferences
   onComplete?: () => void
 }
 
@@ -49,21 +65,22 @@ export default function ClientCommunicationSetup({
 
   // TODO: Implement when communication API is ready
   const updatePreferences = {
-    mutate: (data: any) => {
-      // Simulate API call
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mutate: (_data: { customerId: string; preferences: CommunicationPreferences }) => {
+      // Simulate API call - _data parameter reserved for future API implementation
       setTimeout(() => {
         setStep(4) // Success step
         onComplete?.()
       }, 1500)
     },
-    isLoading: false,
+    isPending: false,
     error: null
   }
 
   const emailOptIn = watch('emailOptIn')
   const whatsappOptIn = watch('whatsappOptIn')
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: CommunicationPreferences) => {
     updatePreferences.mutate({
       customerId,
       preferences: data
@@ -201,7 +218,7 @@ export default function ClientCommunicationSetup({
                   </div>
                   <Switch
                     checked={emailOptIn}
-                    onCheckedChange={(checked) => setValue('emailOptIn', checked)}
+                    onCheckedChange={(checked: boolean) => setValue('emailOptIn', checked)}
                   />
                 </div>
               </div>
@@ -230,7 +247,7 @@ export default function ClientCommunicationSetup({
                   </div>
                   <Switch
                     checked={whatsappOptIn}
-                    onCheckedChange={(checked) => setValue('whatsappOptIn', checked)}
+                    onCheckedChange={(checked: boolean) => setValue('whatsappOptIn', checked)}
                   />
                 </div>
               </div>
@@ -275,10 +292,10 @@ export default function ClientCommunicationSetup({
 
               {/* No opt-ins warning */}
               {!emailOptIn && !whatsappOptIn && (
-                <Alert className="border-yellow-200 bg-yellow-50">
+                <Alert className="border-blue-200 bg-blue-50">
                   <div>
-                    <h4 className="font-medium text-yellow-800">⚠️ Limited Communication</h4>
-                    <p className="text-yellow-700 text-sm mt-1">
+                    <h4 className="font-medium text-blue-800">⚠️ Limited Communication</h4>
+                    <p className="text-blue-700 text-sm mt-1">
                       Without email or WhatsApp enabled, we can only contact you by phone
                       for urgent matters. You may miss important deadlines.
                     </p>
@@ -353,9 +370,9 @@ export default function ClientCommunicationSetup({
               </Button>
               <Button
                 type="submit"
-                disabled={updatePreferences.isLoading}
+                disabled={updatePreferences.isPending}
               >
-                {updatePreferences.isLoading ? 'Saving...' : 'Save Preferences'}
+                {updatePreferences.isPending ? 'Saving...' : 'Save Preferences'}
               </Button>
             </div>
           </Card>

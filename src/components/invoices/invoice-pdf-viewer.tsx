@@ -1,13 +1,23 @@
 /**
  * Invoice PDF Viewer Component
  * Integrates with PDF engine for invoice generation and display
+ * Now includes automatic attachment merging
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { pdfEngine } from '../../lib/pdf-engine';
+import { PDFEngine } from '../../lib/pdf-engine';
+import { PDFMerger } from '../../lib/pdf-merger';
+import { api } from '@/utils/api';
+import { createClient } from '@supabase/supabase-js';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Download, Eye, Send, Loader2 } from 'lucide-react';
+import { InvoiceStatus } from '@prisma/client';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface InvoicePDFViewerProps {
   invoice: {
@@ -15,13 +25,18 @@ interface InvoicePDFViewerProps {
     number: string;
     issueDate: Date;
     dueDate?: Date;
-    status: string;
+    status: InvoiceStatus;
     grandTotal: number;
+    placeOfSupply?: string;
+    notes?: string;
+    terms?: string;
     customer: {
       name: string;
       email?: string;
       address?: string;
       gstin?: string;
+      stateCode?: string;
+      phone?: string;
     };
     company: {
       name: string;
@@ -29,6 +44,12 @@ interface InvoicePDFViewerProps {
       gstin: string;
       email: string;
       phone: string;
+      website?: string;
+      logo?: string;
+      bankName?: string;
+      accountNumber?: string;
+      ifscCode?: string;
+      upiId?: string;
     };
     lines: Array<{
       description: string;
@@ -54,6 +75,11 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch attachments for this invoice
+  const { data: attachments } = api.attachment.getByInvoiceId.useQuery({
+    invoiceId: invoice.id,
+  });
+
   const generatePDF = useCallback(async () => {
     setIsGenerating(true);
     setError(null);
@@ -61,22 +87,34 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
     try {
       // Transform invoice data to match PDF engine expected format
       const pdfData = {
-        company: invoice.company,
+        company: {
+          name: invoice.company?.name || 'Company Name',
+          address: invoice.company?.address || '',
+          gstin: invoice.company?.gstin || '',
+          email: invoice.company?.email || '',
+          phone: invoice.company?.phone || '',
+          website: invoice.company?.website || '',
+          logo: invoice.company?.logo || undefined,
+        },
         customer: {
           name: invoice.customer.name,
           gstin: invoice.customer.gstin,
           address: invoice.customer.address || '',
-          stateCode: (invoice.customer as any).stateCode,
+          stateCode: invoice.customer.stateCode || '',
+          email: invoice.customer.email,
+          phone: invoice.customer.phone,
         },
         invoice: {
           number: invoice.number,
           issueDate: invoice.issueDate,
           dueDate: invoice.dueDate,
-          placeOfSupply: (invoice as any).placeOfSupply,
-          notes: (invoice as any).notes,
-          terms: (invoice as any).terms,
+          placeOfSupply: invoice.placeOfSupply,
+          status: invoice.status,
+          currency: 'INR',
+          notes: invoice.notes,
+          terms: invoice.terms,
         },
-        lineItems: invoice.lines.map((line: any) => ({
+        lineItems: invoice.lines.map((line) => ({
           description: line.description,
           quantity: line.quantity,
           rate: line.rate,
@@ -86,7 +124,7 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
           igst: invoice.taxBreakdown.igstAmount > 0 ? (line.quantity * line.rate * line.gstRate) / 100 : 0,
           lineTotal: line.amount,
           gstRate: line.gstRate,
-          hsnSac: line.hsnSac,
+          hsnSac: (line as { hsnSac?: string }).hsnSac || '',
         })),
         totals: {
           ...invoice.taxBreakdown,
@@ -94,18 +132,74 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
           grandTotal: invoice.grandTotal,
           isInterstate: invoice.taxBreakdown.igstAmount > 0,
         },
+        branding: {
+          primaryColor: '#1e40af',
+          accentColor: '#3b82f6',
+          logoPosition: 'left' as const,
+          showWatermark: invoice.status === 'SENT',
+        },
+        paymentDetails: invoice.company?.bankName ? {
+          bankName: invoice.company.bankName,
+          accountNumber: invoice.company.accountNumber || '',
+          ifscCode: invoice.company.ifscCode || '',
+          upiId: invoice.company.upiId || '',
+        } : undefined,
       };
 
-      const pdfBlob = await pdfEngine.generatePDFBlob(pdfData);
-      const url = URL.createObjectURL(pdfBlob);
-      setPdfUrl(url);
+      const pdfEngine = PDFEngine.getInstance();
+      const invoicePdfBlob = await pdfEngine.generatePDFBlob(pdfData);
+
+      // If there are attachments, merge them with the invoice PDF
+      if (attachments && attachments.length > 0) {
+        console.log(`🔗 Merging ${attachments.length} attachments with invoice PDF`);
+
+        // Download all attachment PDFs from Supabase
+        const attachmentBlobs: Blob[] = [];
+        for (const attachment of attachments) {
+          try {
+            const { data, error } = await supabase.storage
+              .from('invoice-attachments')
+              .download(attachment.storagePath);
+
+            if (!error && data) {
+              attachmentBlobs.push(data);
+              console.log(`✅ Downloaded attachment: ${attachment.fileName}`);
+            } else {
+              console.error(`❌ Failed to download ${attachment.fileName}:`, error);
+            }
+          } catch (err) {
+            console.error(`❌ Error downloading ${attachment.fileName}:`, err);
+          }
+        }
+
+        // Merge invoice PDF with attachments
+        if (attachmentBlobs.length > 0) {
+          const mergedBlob = await PDFMerger.mergePDFs([
+            { type: 'blob', data: invoicePdfBlob },
+            ...attachmentBlobs.map(blob => ({ type: 'blob' as const, data: blob })),
+          ]);
+
+          console.log(`✅ Successfully merged invoice with ${attachmentBlobs.length} attachments`);
+
+          const url = URL.createObjectURL(mergedBlob);
+          setPdfUrl(url);
+        } else {
+          // No attachments could be downloaded, use original invoice PDF
+          const url = URL.createObjectURL(invoicePdfBlob);
+          setPdfUrl(url);
+        }
+      } else {
+        // No attachments, use original invoice PDF
+        const url = URL.createObjectURL(invoicePdfBlob);
+        setPdfUrl(url);
+      }
     } catch (err) {
       setError('Failed to generate PDF. Please try again.');
       console.error('PDF generation error:', err);
     } finally {
       setIsGenerating(false);
     }
-  }, [invoice]);
+  }, [invoice, attachments]);
 
   useEffect(() => {
     generatePDF();

@@ -17,7 +17,14 @@ interface LoadTestConfig {
   duration: number; // seconds
   rampUpTime: number; // seconds
   targetEndpoint: string;
-  testData: any[];
+  testData: unknown[];
+}
+
+interface TestResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+  duration: number;
 }
 
 class PerformanceTestFramework {
@@ -87,7 +94,8 @@ class PerformanceTestFramework {
    * API Endpoint Load Testing Algorithm
    */
   async loadTestEndpoint(config: LoadTestConfig): Promise<PerformanceMetrics> {
-    const { concurrentUsers, duration, rampUpTime, targetEndpoint, testData } = config;
+    const { concurrentUsers, duration, targetEndpoint, testData } = config;
+    // rampUpTime for future gradual load increase implementation
 
     console.log(`🚀 Starting load test: ${concurrentUsers} users for ${duration}s`);
 
@@ -164,7 +172,7 @@ class PerformanceTestFramework {
       global.gc(); // Force garbage collection if --expose-gc flag is used
     }
 
-    const afterGCMemory = process.memoryUsage();
+    // const afterGCMemory = process.memoryUsage(); // For future memory analysis
 
     return {
       executionTime: endTime - startTime,
@@ -232,12 +240,12 @@ class PerformanceTestFramework {
   }
 
   // Helper Methods
-  private async testCRUDOperations(): Promise<any> {
+  private async testCRUDOperations(): Promise<TestResult> {
     // Simulate CRUD operations with timing
     const operations = ['create', 'read', 'update', 'delete'];
     const results = [];
 
-    for (const op of operations) {
+    for (let i = 0; i < operations.length; i++) {
       const startTime = Date.now();
       // Simulate database operation
       await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
@@ -247,12 +255,12 @@ class PerformanceTestFramework {
     return results;
   }
 
-  private async testComplexQueries(): Promise<any> {
+  private async testComplexQueries(): Promise<TestResult> {
     // Simulate complex database queries
     const queries = ['JOIN', 'GROUP BY', 'AGGREGATE', 'SUBQUERY'];
     const results = [];
 
-    for (const query of queries) {
+    for (let i = 0; i < queries.length; i++) {
       const startTime = Date.now();
       // Simulate complex query execution
       await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
@@ -262,7 +270,7 @@ class PerformanceTestFramework {
     return results;
   }
 
-  private async testConcurrentAccess(): Promise<any> {
+  private async testConcurrentAccess(): Promise<TestResult> {
     // Simulate concurrent database access
     const concurrentOps = Array(10).fill(0).map(async () => {
       const startTime = Date.now();
@@ -273,7 +281,7 @@ class PerformanceTestFramework {
     return Promise.all(concurrentOps);
   }
 
-  private async testTransactionPerformance(): Promise<any> {
+  private async testTransactionPerformance(): Promise<TestResult> {
     // Simulate database transactions
     const startTime = Date.now();
 
@@ -287,7 +295,7 @@ class PerformanceTestFramework {
     return operations / (timeMs / 1000);
   }
 
-  private calculateErrorRate(results: any[]): number {
+  private calculateErrorRate(results: TestResult[]): number {
     const errors = results.filter(r => r instanceof Error || (r && r.error));
     return (errors.length / results.length) * 100;
   }
@@ -302,7 +310,7 @@ class PerformanceTestFramework {
     users: number,
     duration: number,
     endpoint: string,
-    testData: any[],
+    testData: unknown[],
     results: number[],
     errors: Error[]
   ): Promise<void> {
@@ -320,19 +328,19 @@ class PerformanceTestFramework {
     await Promise.all(promises);
   }
 
-  private async simulateDatabaseFailure(): Promise<any> {
+  private async simulateDatabaseFailure(): Promise<TestResult> {
     // Simulate database connection failure and recovery
     await new Promise(resolve => setTimeout(resolve, 2000));
     return { scenario: 'database_failure', recovered: true };
   }
 
-  private async simulateNetworkLatency(): Promise<any> {
+  private async simulateNetworkLatency(): Promise<TestResult> {
     // Simulate high network latency
     await new Promise(resolve => setTimeout(resolve, 3000));
     return { scenario: 'network_latency', impact: 'high' };
   }
 
-  private async simulateMemoryPressure(): Promise<any> {
+  private async simulateMemoryPressure(): Promise<TestResult> {
     // Simulate memory pressure scenario
     const largeArray = Array(100000).fill(0).map(() => Math.random());
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -340,7 +348,7 @@ class PerformanceTestFramework {
     return { scenario: 'memory_pressure', handled: true };
   }
 
-  private async simulateCPUSpike(): Promise<any> {
+  private async simulateCPUSpike(): Promise<TestResult> {
     // Simulate CPU intensive operation
     const startTime = Date.now();
     let counter = 0;
@@ -350,12 +358,12 @@ class PerformanceTestFramework {
     return { scenario: 'cpu_spike', operations: counter };
   }
 
-  private async simulateServiceOutage(): Promise<any> {
+  private async simulateServiceOutage(): Promise<TestResult> {
     // Simulate external service outage
     throw new Error('External service unavailable');
   }
 
-  private estimateResponseTime(results: PromiseSettledResult<any>[], percentile: number): number {
+  private estimateResponseTime(results: PromiseSettledResult<TestResult>[], percentile: number): number {
     const successTimes = results
       .filter(r => r.status === 'fulfilled')
       .map(() => Math.random() * 1000); // Estimated response times
@@ -363,7 +371,7 @@ class PerformanceTestFramework {
     return this.calculatePercentile(percentile, successTimes);
   }
 
-  private async testGSTCalculationSpeed(): Promise<any> {
+  private async testGSTCalculationSpeed(): Promise<TestResult> {
     const startTime = Date.now();
     const operations = 1000;
 
@@ -372,7 +380,7 @@ class PerformanceTestFramework {
       const amount = Math.random() * 10000;
       const gstRate = 18;
       const gstAmount = (amount * gstRate) / 100;
-      const total = amount + gstAmount;
+      amount + gstAmount; // GST calculation validation
     }
 
     const endTime = Date.now();
@@ -383,7 +391,7 @@ class PerformanceTestFramework {
     };
   }
 
-  private async testInvoiceGenerationSpeed(): Promise<any> {
+  private async testInvoiceGenerationSpeed(): Promise<TestResult> {
     const startTime = Date.now();
     const invoiceCount = 100;
 
@@ -400,7 +408,7 @@ class PerformanceTestFramework {
     };
   }
 
-  private async testPaymentReconciliationSpeed(): Promise<any> {
+  private async testPaymentReconciliationSpeed(): Promise<TestResult> {
     const startTime = Date.now();
     const payments = 500;
 
@@ -421,7 +429,7 @@ class PerformanceTestFramework {
     };
   }
 
-  private async testReportGenerationSpeed(): Promise<any> {
+  private async testReportGenerationSpeed(): Promise<TestResult> {
     const startTime = Date.now();
     const reports = 10;
 
@@ -438,7 +446,7 @@ class PerformanceTestFramework {
     };
   }
 
-  private async testBulkOperationsSpeed(): Promise<any> {
+  private async testBulkOperationsSpeed(): Promise<TestResult> {
     const startTime = Date.now();
     const bulkSize = 1000;
 

@@ -4,10 +4,18 @@
  */
 
 import React, { useState } from 'react';
-import { api } from '../../src/lib/trpc-client';
-import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
-import { Button } from '../../src/components/ui/button';
-import { formatCurrency, formatDate } from '../../src/lib/utils';
+import Head from 'next/head';
+import { api } from '@/utils/api';
+import { AuraLayout } from '@/components/ui/aura-layout';
+import { AuraCard, AuraCardContent } from '@/components/ui/aura-card';
+import { AuraButton } from '@/components/ui/aura-button';
+import { AuraSelect } from '@/components/ui/aura-select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { ComplianceFormModal } from '@/components/compliance/compliance-form-modal';
+import { ComplianceDetailsModal } from '@/components/compliance/compliance-details-modal';
+import { ComplianceDeleteDialog } from '@/components/compliance/compliance-delete-dialog';
 import {
   Calendar,
   AlertTriangle,
@@ -58,6 +66,11 @@ export default function ComplianceDashboard() {
   const [dateRange, setDateRange] = useState<'thisWeek' | 'thisMonth' | 'thisQuarter' | 'thisYear'>('thisMonth');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'pending' | 'overdue' | 'upcoming'>('overview');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedComplianceId, setSelectedComplianceId] = useState<string | undefined>(undefined);
+  const [complianceToDelete, setComplianceToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch dashboard data
   const { data: dashboardData, isLoading } = (api as any).compliance.getDashboard.useQuery({
@@ -71,10 +84,40 @@ export default function ComplianceDashboard() {
     category: selectedCategory || undefined,
   });
 
+  const utils = api.useUtils();
+
   // Initialize default templates mutation
   const initializeTemplatesMutation = (api as any).compliance.initializeDefaultTemplates.useMutation({
     onSuccess: (data: any) => {
       console.log(`Initialized ${data.created} compliance templates`);
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = (api as any).compliance.delete.useMutation({
+    onSuccess: () => {
+      utils.compliance.getAll.invalidate();
+      utils.compliance.getDashboard.invalidate();
+      setIsDeleteDialogOpen(false);
+      setComplianceToDelete(null);
+    },
+    onError: (error: any) => {
+      console.error('Failed to delete compliance:', error);
+      alert('Failed to delete compliance item. Please try again.');
+    },
+  });
+
+  // Mark as complete mutation
+  const markCompleteMutation = (api as any).compliance.markComplete.useMutation({
+    onSuccess: () => {
+      utils.compliance.getAll.invalidate();
+      utils.compliance.getDashboard.invalidate();
+      utils.compliance.getById.invalidate({ id: selectedComplianceId! });
+      setIsViewModalOpen(false);
+    },
+    onError: (error: any) => {
+      console.error('Failed to mark compliance as complete:', error);
+      alert('Failed to mark compliance as complete. Please try again.');
     },
   });
 
@@ -138,57 +181,76 @@ export default function ComplianceDashboard() {
   const overdueItems = dashboardData?.overdueItems || [];
   const recentActivities = dashboardData?.recentActivities || [];
 
+  const breadcrumbs = [
+    { label: "Dashboard", href: "/" },
+    { label: "Compliance" }
+  ];
+
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      <AuraButton
+        variant="secondary"
+        onClick={handleInitializeTemplates}
+        disabled={initializeTemplatesMutation.isLoading}
+        icon={<FileText className="h-4 w-4" />}
+      >
+        {initializeTemplatesMutation.isLoading ? 'Initializing...' : 'Initialize Templates'}
+      </AuraButton>
+      <AuraButton
+        variant="primary"
+        onClick={() => {
+          setSelectedComplianceId(undefined);
+          setIsCreateModalOpen(true);
+        }}
+        icon={<Plus className="h-4 w-4" />}
+      >
+        New Compliance
+      </AuraButton>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Compliance Management</h1>
-          <p className="text-gray-600">Track deadlines, ROC filings, and regulatory compliance</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={handleInitializeTemplates}
-            disabled={initializeTemplatesMutation.isLoading}
-            className="flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            {initializeTemplatesMutation.isLoading ? 'Initializing...' : 'Setup Templates'}
-          </Button>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Compliance
-          </Button>
-        </div>
-      </div>
+    <>
+      <Head>
+        <title>Compliance - CS ERP Professional Suite</title>
+        <meta name="description" content="Track deadlines, ROC filings, and regulatory compliance" />
+      </Head>
+
+      <AuraLayout
+        title="Compliance Management"
+        subtitle="Track deadlines, ROC filings, and regulatory compliance for Mrs. Pragnya Pradhan's CS practice"
+        breadcrumbs={breadcrumbs}
+        headerActions={headerActions}
+        userEmail="Mrs. Pragnya Pradhan"
+        userName="pragnya@pradhanassociates.com"
+      >
+        <div className="space-y-6">
 
       {/* Date Range Filter */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-600">Period:</span>
-          <select
+          <AuraSelect
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value as any)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
           >
             <option value="thisWeek">This Week</option>
             <option value="thisMonth">This Month</option>
             <option value="thisQuarter">This Quarter</option>
             <option value="thisYear">This Year</option>
-          </select>
+          </AuraSelect>
         </div>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
+        <AuraButton variant="secondary" size="sm" icon={<Download className="h-4 w-4" />}>
           Export Report
-        </Button>
+        </AuraButton>
       </div>
 
       {/* Key Metrics Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Compliances */}
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm font-medium">Total Compliances</p>
@@ -199,12 +261,12 @@ export default function ComplianceDashboard() {
                 <FileText className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Completion Rate */}
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-100 text-sm font-medium">Completion Rate</p>
@@ -215,12 +277,12 @@ export default function ComplianceDashboard() {
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Overdue Items */}
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-red-500 to-red-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-red-100 text-sm font-medium">Overdue Items</p>
@@ -231,12 +293,12 @@ export default function ComplianceDashboard() {
                 <AlertTriangle className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
 
         {/* Upcoming Deadlines */}
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-          <CardContent className="p-6">
+        <AuraCard className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <AuraCardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-100 text-sm font-medium">Upcoming (7 days)</p>
@@ -247,8 +309,8 @@ export default function ComplianceDashboard() {
                 <Clock className="h-6 w-6 text-white" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AuraCardContent>
+        </AuraCard>
       </div>
 
       {/* Secondary Metrics */}
@@ -417,10 +479,24 @@ export default function ComplianceDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedComplianceId(item.id);
+                            setIsViewModalOpen(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedComplianceId(item.id);
+                            setIsCreateModalOpen(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -484,6 +560,60 @@ export default function ComplianceDashboard() {
           </Card>
         </div>
       </div>
-    </div>
+        </div>
+      </AuraLayout>
+
+      {/* Create/Edit Compliance Modal */}
+      <ComplianceFormModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        complianceId={selectedComplianceId}
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          setSelectedComplianceId(undefined);
+        }}
+      />
+
+      {/* View Compliance Details Modal */}
+      {selectedComplianceId && (
+        <ComplianceDetailsModal
+          open={isViewModalOpen}
+          onOpenChange={setIsViewModalOpen}
+          complianceId={selectedComplianceId}
+          onEdit={() => {
+            setIsViewModalOpen(false);
+            setIsCreateModalOpen(true);
+          }}
+          onDelete={() => {
+            const compliance = [...upcomingDeadlines, ...overdueItems].find(c => c.id === selectedComplianceId);
+            if (compliance) {
+              setComplianceToDelete({ id: compliance.id, name: compliance.title });
+              setIsViewModalOpen(false);
+              setIsDeleteDialogOpen(true);
+            }
+          }}
+          onMarkComplete={() => {
+            if (selectedComplianceId) {
+              markCompleteMutation.mutate({ id: selectedComplianceId });
+            }
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {complianceToDelete && (
+        <ComplianceDeleteDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          complianceName={complianceToDelete.name}
+          onConfirm={() => {
+            if (complianceToDelete) {
+              deleteMutation.mutate({ id: complianceToDelete.id });
+            }
+          }}
+          isDeleting={deleteMutation.isLoading}
+        />
+      )}
+    </>
   );
 }

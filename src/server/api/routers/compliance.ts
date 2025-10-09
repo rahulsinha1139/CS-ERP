@@ -4,9 +4,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
-import { ComplianceEngine } from "../../../lib/compliance-engine";
+import { ComplianceEngine, ComplianceType, Priority, ComplianceFrequency, ActivityType, ComplianceCategory, type ComplianceItem } from "../../../lib/compliance-engine";
+import { type Prisma } from "@prisma/client";
+import { idGenerator } from "@/lib/id-generator";
 
 // Validation schemas
 const complianceCreateSchema = z.object({
@@ -45,7 +47,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Get all compliance items with filtering and pagination
    */
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(z.object({
       page: z.number().default(1),
       limit: z.number().default(20),
@@ -71,14 +73,14 @@ export const complianceRouter = createTRPCRouter({
       const skip = (page - 1) * limit;
 
       // Build where clause
-      const where: any = {
+      const where: Prisma.ComplianceItemWhereInput = {
         companyId: ctx.companyId,
       };
 
       if (filters.customerId) where.customerId = filters.customerId;
       if (filters.status) where.status = filters.status;
-      if (filters.category) where.category = filters.category;
-      if (filters.complianceType) where.complianceType = filters.complianceType;
+      if (filters.category) where.category = filters.category as ComplianceCategory;
+      if (filters.complianceType) where.complianceType = filters.complianceType as ComplianceType;
       if (filters.priority) where.priority = filters.priority;
 
       // Date range filter
@@ -116,7 +118,7 @@ export const complianceRouter = createTRPCRouter({
 
         const penalty = daysOverdue > 0
           ? ComplianceEngine.calculatePenalty(
-              compliance.complianceType as any,
+              compliance.complianceType as ComplianceType,
               daysOverdue,
               compliance.estimatedCost || 0
             )
@@ -143,7 +145,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Get single compliance item by ID
    */
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const compliance = await ctx.db.complianceItem.findFirst({
@@ -173,7 +175,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Create new compliance item
    */
-  create: publicProcedure
+  create: protectedProcedure
     .input(complianceCreateSchema)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.companyId) {
@@ -185,19 +187,20 @@ export const complianceRouter = createTRPCRouter({
 
       // Auto-calculate priority if not provided
       const priority = input.priority || ComplianceEngine.calculatePriority(
-        input.complianceType as any,
+        input.complianceType as ComplianceType,
         input.dueDate
       );
 
       const compliance = await ctx.db.complianceItem.create({
         data: {
+          id: idGenerator.compliance(),
           ...input,
           companyId: ctx.companyId,
-          priority: priority as any,
+          priority: priority as Priority,
           nextDueDate: input.isRecurring && input.frequency
-            ? ComplianceEngine.calculateNextDueDate(input.dueDate, input.frequency as any)
+            ? ComplianceEngine.calculateNextDueDate(input.dueDate, input.frequency as ComplianceFrequency)
             : undefined,
-        },
+        } as Prisma.ComplianceItemUncheckedCreateInput,
         include: {
           customer: true,
           template: true,
@@ -207,8 +210,9 @@ export const complianceRouter = createTRPCRouter({
       // Create activity log
       await ctx.db.complianceActivity.create({
         data: {
+          id: idGenerator.complianceActivity(),
           complianceId: compliance.id,
-          activityType: 'CREATED',
+          activityType: ActivityType.CREATED,
           description: `Compliance item created: ${compliance.title}`,
           performedBy: 'System', // In real app, would be current user
         },
@@ -220,7 +224,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Update compliance item
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       id: z.string(),
       title: z.string().optional(),
@@ -265,20 +269,21 @@ export const complianceRouter = createTRPCRouter({
 
       // Create activity log
       let activityDescription = `Compliance item updated`;
-      let activityType: any = 'UPDATED';
+      let activityType: ActivityType = ActivityType.UPDATED;
 
       if (updateData.status) {
         activityDescription = `Status changed to ${updateData.status}`;
-        activityType = 'STATUS_CHANGED';
+        activityType = ActivityType.STATUS_CHANGED;
 
         if (updateData.status === 'COMPLETED') {
-          activityType = 'COMPLETED';
+          activityType = ActivityType.COMPLETED;
           activityDescription = `Compliance item completed`;
         }
       }
 
       await ctx.db.complianceActivity.create({
         data: {
+          id: idGenerator.complianceActivity(),
           complianceId: id,
           activityType,
           description: activityDescription,
@@ -292,7 +297,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Get compliance dashboard data
    */
-  getDashboard: publicProcedure
+  getDashboard: protectedProcedure
     .input(z.object({
       dateRange: z.enum(['thisWeek', 'thisMonth', 'thisQuarter', 'thisYear']).default('thisMonth'),
     }))
@@ -333,7 +338,7 @@ export const complianceRouter = createTRPCRouter({
       });
 
       // Calculate statistics using our engine
-      const stats = ComplianceEngine.calculateStats(compliances as any);
+      const stats = ComplianceEngine.calculateStats(compliances as ComplianceItem[]);
 
       // Get upcoming deadlines (next 7 days)
       const upcomingDeadlines = compliances
@@ -378,7 +383,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Get default templates and initialize them
    */
-  initializeDefaultTemplates: publicProcedure
+  initializeDefaultTemplates: protectedProcedure
     .mutation(async ({ ctx }) => {
       if (!ctx.companyId) {
         throw new TRPCError({
@@ -418,9 +423,10 @@ export const complianceRouter = createTRPCRouter({
         if (!existingTemplate) {
           const template = await ctx.db.complianceTemplate.create({
             data: {
+              id: idGenerator.complianceTemplate(),
               ...templateData,
               companyId: ctx.companyId,
-            } as any,
+            } as Prisma.ComplianceTemplateUncheckedCreateInput,
           });
           createdTemplates.push(template);
         }
@@ -435,7 +441,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Get compliance templates
    */
-  getTemplates: publicProcedure
+  getTemplates: protectedProcedure
     .query(async ({ ctx }) => {
       const templates = await ctx.db.complianceTemplate.findMany({
         where: {
@@ -451,7 +457,7 @@ export const complianceRouter = createTRPCRouter({
   /**
    * Get upcoming compliance deadlines (next 7 days)
    */
-  getUpcoming: publicProcedure
+  getUpcoming: protectedProcedure
     .input(z.object({
       days: z.number().min(1).max(30).default(7),
       limit: z.number().min(1).max(50).default(10),
@@ -506,6 +512,100 @@ export const complianceRouter = createTRPCRouter({
         totalCount: enhancedCompliances.length,
         daysAhead,
       };
+    }),
+
+  /**
+   * Delete a compliance item
+   */
+  delete: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.companyId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Company ID required',
+        });
+      }
+
+      // Verify the compliance belongs to this company
+      const compliance = await ctx.db.complianceItem.findFirst({
+        where: {
+          id: input.id,
+          companyId: ctx.companyId,
+        },
+      });
+
+      if (!compliance) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Compliance item not found',
+        });
+      }
+
+      // Delete the compliance item (cascade will handle related records)
+      await ctx.db.complianceItem.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Mark compliance as complete
+   */
+  markComplete: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      actualCost: z.number().optional(),
+      completionNotes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.companyId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Company ID required',
+        });
+      }
+
+      // Verify the compliance belongs to this company
+      const compliance = await ctx.db.complianceItem.findFirst({
+        where: {
+          id: input.id,
+          companyId: ctx.companyId,
+        },
+      });
+
+      if (!compliance) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Compliance item not found',
+        });
+      }
+
+      // Update compliance status to COMPLETED
+      const completedCompliance = await ctx.db.complianceItem.update({
+        where: { id: input.id },
+        data: {
+          status: 'COMPLETED',
+          completedDate: new Date(),
+          actualCost: input.actualCost,
+        },
+      });
+
+      // Create activity log
+      await ctx.db.complianceActivity.create({
+        data: {
+          complianceId: input.id,
+          activityType: 'COMPLETED',
+          description: input.completionNotes || 'Compliance item marked as completed',
+          activityDate: new Date(),
+          performedBy: 'System',
+        },
+      });
+
+      return completedCompliance;
     }),
 
 });

@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { api } from '@/lib/trpc-client'
+import { api } from '@/utils/api'
 import Head from 'next/head'
 
 interface EmailConfig {
@@ -30,7 +30,9 @@ export default function CommunicationSetup() {
   const whatsappForm = useForm<WhatsAppConfig>()
 
   // tRPC hooks
-  const { data: settings, refetch: refetchSettings } = api.communication.getSettings.useQuery()
+  const { data: settings, refetch: refetchSettings } = api.communication.getSettings.useQuery(undefined, {
+    enabled: typeof window !== 'undefined', // Only run on client
+  })
   const configureResend = api.communication.configureResend.useMutation()
   const configureWhatsApp = api.communication.configureWhatsApp.useMutation()
   const testConfiguration = api.communication.testConfiguration.useMutation()
@@ -96,8 +98,9 @@ export default function CommunicationSetup() {
 
       console.log('Test email result:', result)
       alert('Test email sent successfully!')
-    } catch (error: any) {
-      alert(`Test email failed: ${error.message}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Test email failed: ${errorMessage}`)
     }
   }
 
@@ -175,7 +178,7 @@ export default function CommunicationSetup() {
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as 'email' | 'whatsapp' | 'test')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
@@ -265,9 +268,9 @@ export default function CommunicationSetup() {
                 <div>
                   <h3 className="text-lg font-semibold mb-4">WhatsApp Business API Configuration</h3>
 
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <h4 className="font-medium text-yellow-900">⚠️ WhatsApp Requirements:</h4>
-                    <ul className="text-sm text-yellow-800 mt-2 space-y-1 list-disc list-inside">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-medium text-blue-900">⚠️ WhatsApp Requirements:</h4>
+                    <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
                       <li>WhatsApp Business API account required</li>
                       <li>Business verification needed</li>
                       <li>Costs: $0.005-0.02 per message</li>
@@ -363,18 +366,18 @@ export default function CommunicationSetup() {
                     <div className="space-y-3">
                       <button
                         onClick={handleTestConfiguration}
-                        disabled={testConfiguration.isLoading}
+                        disabled={testConfiguration.isPending}
                         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {testConfiguration.isLoading ? 'Testing...' : '🧪 Test All Configurations'}
+                        {testConfiguration.isPending ? 'Testing...' : '🧪 Test All Configurations'}
                       </button>
 
                       <button
                         onClick={handleSendTestEmail}
-                        disabled={!settings?.emailEnabled || sendTestEmail.isLoading}
+                        disabled={!settings?.emailEnabled || sendTestEmail.isPending}
                         className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {sendTestEmail.isLoading ? 'Sending...' : '📧 Send Test Email'}
+                        {sendTestEmail.isPending ? 'Sending...' : '📧 Send Test Email'}
                       </button>
 
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

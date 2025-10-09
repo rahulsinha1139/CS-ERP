@@ -12,7 +12,7 @@ interface TestResult {
   test: string;
   status: 'PASS' | 'FAIL';
   message?: string;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
@@ -45,6 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Try to create a test company
       const testCompany = await prisma.company.create({
         data: {
+          id: 'test-company-001',
           name: 'Test CS Practice',
           email: 'test@cspractice.com',
           phone: '+91-9999999999',
@@ -75,6 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (companies.length > 0) {
         const testCustomer = await prisma.customer.create({
           data: {
+            id: 'test-customer-001',
             name: 'Test Client Pvt Ltd',
             email: 'client@test.com',
             phone: '+91-8888888888',
@@ -120,6 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (companies.length > 0) {
         const testService = await prisma.serviceTemplate.create({
           data: {
+            id: 'test-service-001',
             name: 'AGM Compliance Service',
             description: 'Annual General Meeting compliance service',
             defaultRate: 15000,
@@ -155,6 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Create Compliance Template
         const complianceTemplate = await prisma.complianceTemplate.create({
           data: {
+            id: 'test-template-001',
             title: 'Annual General Meeting',
             description: 'AGM must be held within 6 months of financial year end',
             complianceType: 'AGM',
@@ -173,6 +177,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Create Compliance Item
         const complianceItem = await prisma.complianceItem.create({
           data: {
+            id: 'test-compliance-001',
             title: 'AGM 2024 - Test Client',
             description: 'Annual General Meeting for Test Client Pvt Ltd',
             complianceType: 'AGM',
@@ -193,6 +198,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Create Activity
         const activity = await prisma.complianceActivity.create({
           data: {
+            id: 'test-activity-001',
             complianceId: complianceItem.id,
             activityType: 'CREATED',
             description: 'Compliance item created from template',
@@ -241,6 +247,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (companies.length > 0 && customers.length > 0) {
         const testInvoice = await prisma.invoice.create({
           data: {
+            id: 'test-invoice-001',
             number: 'TEST-001',
             customerId: customers[0].id,
             companyId: companies[0].id,
@@ -254,6 +261,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             lines: {
               create: [
                 {
+                  id: 'test-line-001',
                   description: 'AGM Compliance Service',
                   quantity: 1,
                   rate: 15000,
@@ -300,6 +308,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (invoices.length > 0 && customers.length > 0 && companies.length > 0) {
         const testPayment = await prisma.payment.create({
           data: {
+            id: 'test-payment-001',
             invoiceId: invoices[0].id,
             customerId: customers[0].id,
             companyId: companies[0].id,

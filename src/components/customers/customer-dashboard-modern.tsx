@@ -5,9 +5,10 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
-import { api } from '@/lib/trpc-client'
+import { api } from '@/utils/api';
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
+import CustomerForm from './customer-form'
 import {
   ArrowLeft,
   User,
@@ -33,17 +34,32 @@ interface CustomerDashboardProps {
 
 export default function ModernCustomerDashboard({ customerId, onBack }: CustomerDashboardProps) {
   const router = useRouter()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [invoiceFilter, _setInvoiceFilter] = useState<'ALL' | 'PAID' | 'UNPAID' | 'OVERDUE' | 'PARTIALLY_PAID'>('ALL')
 
-  // Fetch customer details
+  // Check if this is a new customer creation
+  const isNewCustomer = customerId === 'new'
+
+  // Fetch customer details (only if not creating new)
   const { data: customer, isLoading, error } = api.customer.getById.useQuery({
     id: customerId,
+  }, {
+    enabled: !isNewCustomer, // Only fetch if not creating new customer
   })
 
-  // Fetch filtered invoices
-  const { data: _invoices = [] } = api.customer.getInvoices.useQuery({
+  // Fetch filtered invoices (only if not creating new)
+  const { data: invoices = [] } = api.customer.getInvoices.useQuery({
     customerId,
     status: invoiceFilter,
+  }, {
+    enabled: !isNewCustomer, // Only fetch if not creating new customer
+  })
+
+  // Fetch customer payments (only if not creating new)
+  const { data: payments = [] } = api.payment.getAll.useQuery({
+    customerId,
+  }, {
+    enabled: !isNewCustomer, // Only fetch if not creating new customer
   })
 
   // Format currency
@@ -85,6 +101,41 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
             <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl h-96"></div>
             <div className="lg:col-span-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl h-96"></div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Handle new customer creation
+  if (isNewCustomer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-6 mb-8">
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={onBack}
+              className="bg-white/80 backdrop-blur-sm hover:bg-white/90 border-0 shadow-lg rounded-2xl transition-all duration-300 hover:scale-105"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                Create New Customer
+              </h1>
+              <p className="text-slate-600 mt-2">Add a new customer to your database</p>
+            </div>
+          </div>
+
+          {/* Customer Creation Form */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-2xl rounded-3xl p-8">
+            <CustomerForm
+              onCancel={onBack}
+              onSuccess={() => router.push('/customers')}
+            />
+          </Card>
         </div>
       </div>
     )
@@ -155,6 +206,15 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => router.push(`/customers/edit?id=${customerId}`)}
+                className="hover:bg-slate-50 transition-all duration-200 shadow-sm"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Edit Customer
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 className="hover:bg-slate-50 transition-all duration-200 shadow-sm"
               >
                 <Send className="h-4 w-4 mr-2" />
@@ -162,6 +222,7 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
               </Button>
               <Button
                 size="sm"
+                onClick={() => router.push(`/invoices/new?customerId=${customerId}`)}
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg transition-all duration-200 transform hover:scale-105"
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -331,12 +392,12 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
                   <p className="text-sm text-green-600">Paid</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-amber-50 to-yellow-100 rounded-xl p-4 text-center">
-                  <div className="w-8 h-8 bg-amber-500 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg mx-auto mb-2 flex items-center justify-center">
                     <Clock className="h-4 w-4 text-white" />
                   </div>
-                  <p className="text-2xl font-bold text-amber-700">{financialSummary.pendingInvoices}</p>
-                  <p className="text-sm text-amber-600">Pending</p>
+                  <p className="text-2xl font-bold text-blue-700">{financialSummary.unpaidInvoices}</p>
+                  <p className="text-sm text-blue-600">Pending</p>
                 </div>
 
                 <div className="bg-gradient-to-br from-red-50 to-rose-100 rounded-xl p-4 text-center">
@@ -356,16 +417,117 @@ export default function ModernCustomerDashboard({ customerId, onBack }: Customer
                 </div>
               </div>
 
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <FileText className="h-8 w-8 text-slate-500" />
+              {/* Invoice List */}
+              {invoices.length > 0 ? (
+                <div className="space-y-3">
+                  {invoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="bg-gradient-to-r from-white to-slate-50 rounded-xl p-4 border border-slate-200 hover:shadow-lg transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                            invoice.status === 'PAID' ? 'bg-green-100' :
+                            invoice.status === 'OVERDUE' ? 'bg-red-100' :
+                            invoice.status === 'PARTIALLY_PAID' ? 'bg-yellow-100' :
+                            'bg-blue-100'
+                          }`}>
+                            <FileText className={`h-6 w-6 ${
+                              invoice.status === 'PAID' ? 'text-green-600' :
+                              invoice.status === 'OVERDUE' ? 'text-red-600' :
+                              invoice.status === 'PARTIALLY_PAID' ? 'text-yellow-600' :
+                              'text-blue-600'
+                            }`} />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{invoice.number}</p>
+                            <p className="text-sm text-slate-600">{formatDate(invoice.issueDate)}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-slate-900">{formatCurrency(invoice.grandTotal)}</p>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            invoice.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                            invoice.status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
+                            invoice.status === 'PARTIALLY_PAID' ? 'bg-yellow-100 text-yellow-800' :
+                            invoice.status === 'SENT' ? 'bg-blue-100 text-blue-800' :
+                            'bg-slate-100 text-slate-800'
+                          }`}>
+                            {invoice.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <h4 className="text-xl font-semibold text-slate-900 mb-2">Invoice Details</h4>
-                <p className="text-slate-600">Detailed invoice management coming soon</p>
-              </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-8 w-8 text-slate-500" />
+                  </div>
+                  <h4 className="text-xl font-semibold text-slate-900 mb-2">No Invoices Yet</h4>
+                  <p className="text-slate-600">Create your first invoice for this customer</p>
+                </div>
+              )}
             </Card>
           </div>
         </div>
+
+        {/* Payment History Section */}
+        <Card className="p-6 bg-white/60 backdrop-blur-sm border-0 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-slate-900">Payment History</h3>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-semibold text-green-700">{payments.length} Payments</span>
+            </div>
+          </div>
+
+          {payments.length > 0 ? (
+            <div className="space-y-3">
+              {payments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="bg-gradient-to-r from-white to-green-50 rounded-xl p-4 border border-green-100 hover:shadow-lg transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <DollarSign className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{payment.method}</p>
+                        <p className="text-sm text-slate-600">{formatDate(payment.paymentDate)}</p>
+                        {payment.reference && (
+                          <p className="text-xs text-slate-500">Ref: {payment.reference}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600 text-lg">{formatCurrency(payment.amount)}</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        payment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                        payment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-slate-100 text-slate-800'
+                      }`}>
+                        {payment.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <DollarSign className="h-8 w-8 text-green-500" />
+              </div>
+              <h4 className="text-xl font-semibold text-slate-900 mb-2">No Payments Yet</h4>
+              <p className="text-slate-600">No payment history for this customer</p>
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   )

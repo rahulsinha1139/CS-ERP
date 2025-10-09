@@ -359,7 +359,7 @@ export class ComplianceEngine {
       averageCompletionTime: 0
     };
 
-    let totalCompletionTime = 0;
+    const totalCompletionTime = 0;
     let completedCount = 0;
 
     compliances.forEach(compliance => {

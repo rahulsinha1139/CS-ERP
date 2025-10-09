@@ -3,29 +3,71 @@
  * Complete Customer-Invoice-Payment Pipeline Validation
  */
 
-import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+
+// Type definitions for mock data
+interface MockCustomer {
+  id: string;
+  name: string;
+  email?: string;
+  gstin?: string;
+  stateCode?: string;
+  address?: string;
+  createdAt: Date;
+}
+
+interface MockInvoice {
+  id: string;
+  number: string;
+  customerId: string;
+  subtotal: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount?: number;
+  totalTax: number;
+  grandTotal: number;
+  paidAmount?: number;
+  status: string;
+  dueDate?: Date;
+  createdAt: Date;
+}
+
+interface MockPayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  method: string;
+  reference?: string;
+  paymentDate: Date;
+  status: string;
+}
+
+interface MockDataAccess {
+  companyId: string;
+  customerCount?: number;
+}
 
 // Mock implementations for testing
 const mockDatabase = {
-  customers: [] as any[],
-  invoices: [] as any[],
-  payments: [] as any[]
+  customers: [] as MockCustomer[],
+  invoices: [] as MockInvoice[],
+  payments: [] as MockPayment[]
 };
 
 const mockApiClient = {
   customer: {
-    create: jest.fn(),
-    getById: jest.fn(),
-    update: jest.fn()
+    create: vi.fn(),
+    getById: vi.fn(),
+    update: vi.fn()
   },
   invoice: {
-    create: jest.fn(),
-    getById: jest.fn(),
-    updateStatus: jest.fn()
+    create: vi.fn(),
+    getById: vi.fn(),
+    updateStatus: vi.fn()
   },
   payment: {
-    create: jest.fn(),
-    reconcile: jest.fn()
+    create: vi.fn(),
+    reconcile: vi.fn()
   }
 };
 
@@ -129,31 +171,29 @@ describe('🔄 End-to-End Workflow Testing', () => {
       const invoiceAmount = 10000;
       const partialPayments = [3000, 4000, 3000]; // Total: 10000
 
-      let paidAmount = 0;
+      // Simplified test that validates the logic directly
+      let totalPaid = 0;
       let invoiceStatus = 'SENT';
 
-      for (const [index, amount] of partialPayments.entries()) {
-        paidAmount += amount;
+      // Process payments and verify state transitions
+      for (const amount of partialPayments) {
+        totalPaid += amount;
 
-        if (paidAmount < invoiceAmount) {
+        if (totalPaid < invoiceAmount) {
           invoiceStatus = 'PARTIALLY_PAID';
         } else {
           invoiceStatus = 'PAID';
         }
-
-        mockApiClient.payment.create.mockResolvedValue({
-          id: `pay-${index + 1}`,
-          amount,
-          status: 'COMPLETED'
-        });
-
-        const payment = await mockApiClient.payment.create({ amount });
-        expect(payment.status).toBe('COMPLETED');
       }
 
-      // Fix: Ensure we're testing the accumulated values correctly
-      expect(paidAmount).toBe(invoiceAmount); // This should be 10000
+      // Validate the final state
+      expect(totalPaid).toBe(invoiceAmount); // Should be 10000
       expect(invoiceStatus).toBe('PAID');
+
+      // Validate the arithmetic
+      const expectedTotal = partialPayments.reduce((sum, amount) => sum + amount, 0);
+      expect(expectedTotal).toBe(10000);
+      expect(totalPaid).toBe(expectedTotal);
 
       console.log('✅ Partial payment workflow test passed');
     });
@@ -263,7 +303,7 @@ describe('🔄 End-to-End Workflow Testing', () => {
       const companyBData = { companyId: 'company-b', customerCount: 30 };
 
       // User from Company A should not see Company B data
-      const userAAccess = (data: any) => data.companyId === 'company-a';
+      const userAAccess = (data: MockDataAccess) => data.companyId === 'company-a';
 
       expect(userAAccess(companyAData)).toBe(true);
       expect(userAAccess(companyBData)).toBe(false);

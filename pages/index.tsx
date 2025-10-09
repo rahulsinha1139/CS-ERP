@@ -5,16 +5,70 @@
 
 import React from 'react';
 import Head from 'next/head';
-import { GetServerSideProps } from 'next';
-import DashboardLayout from '@/components/layout/dashboard-layout';
+import { useRouter } from 'next/router';
+import { AuraLayout } from '@/components/ui/aura-layout';
+import { AuraButton } from '@/components/ui/aura-button';
 import DashboardOverview from '@/components/dashboard/dashboard-overview';
-import { api } from '@/lib/trpc-client';
 
 interface DashboardPageProps {
-  // Add any server-side props if needed
+  // Future: server-side props for dashboard data
+  [key: string]: never; // Explicitly empty interface
 }
 
-export default function DashboardPage(props: DashboardPageProps) {
+// Icons for Aura buttons
+const PlusIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+)
+
+const SparkleIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+  </svg>
+)
+
+const CustomersIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+)
+
+export default function DashboardPage(_props: DashboardPageProps) {
+  const router = useRouter();
+
+  const breadcrumbs = [
+    { label: "Dashboard" }
+  ]
+
+  const headerActions = (
+    <div className="flex items-center space-x-3">
+      <AuraButton
+        variant="tertiary"
+        size="sm"
+        icon={<SparkleIcon />}
+        onClick={() => router.push('/aura-demo')}
+      >
+        Aura Demo
+      </AuraButton>
+      <AuraButton
+        variant="secondary"
+        size="sm"
+        icon={<CustomersIcon />}
+        onClick={() => router.push('/customers')}
+      >
+        View Customers
+      </AuraButton>
+      <AuraButton
+        variant="primary"
+        icon={<PlusIcon />}
+        onClick={() => router.push('/invoices/new')}
+      >
+        New Invoice
+      </AuraButton>
+    </div>
+  )
+
   return (
     <>
       <Head>
@@ -24,28 +78,16 @@ export default function DashboardPage(props: DashboardPageProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <DashboardLayout
-        title="Dashboard"
-        subtitle="Business overview and key metrics for your CS practice"
-        actions={
-          <div className="flex gap-2">
-            <button
-              onClick={() => window.location.href = '/invoices/new'}
-              className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              New Invoice
-            </button>
-            <button
-              onClick={() => window.location.href = '/system-test'}
-              className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              System Test
-            </button>
-          </div>
-        }
+      <AuraLayout
+        title="Professional Dashboard"
+        subtitle="Business overview and key metrics for Mrs. Pragnya Pradhan's CS practice"
+        breadcrumbs={breadcrumbs}
+        headerActions={headerActions}
+        userEmail="Mrs. Pragnya Pradhan"
+        userName="pragnya@pradhanassociates.com"
       >
         <DashboardOverview />
-      </DashboardLayout>
+      </AuraLayout>
     </>
   );
 }

@@ -104,7 +104,7 @@ export class EmailEngine {
             content: att.content as string | Buffer,
             content_type: att.contentType,
           })),
-          reply_to: options.replyTo,
+          replyTo: options.replyTo,
           tags: options.tags,
         });
 

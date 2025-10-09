@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from '@trpc/server';
-import { PaymentMethod } from "@prisma/client";
+import { PaymentMethod, type Prisma } from "@prisma/client";
+import { idGenerator } from "@/lib/id-generator";
 
 const createPaymentSchema = z.object({
   invoiceId: z.string().min(1, "Invoice ID is required"),
@@ -14,7 +15,7 @@ const createPaymentSchema = z.object({
 
 export const paymentRouter = createTRPCRouter({
   // Get all payments
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(z.object({
       customerId: z.string().optional(),
       invoiceId: z.string().optional(),
@@ -27,19 +28,13 @@ export const paymentRouter = createTRPCRouter({
         return [];
       }
 
-      const whereClause: any = {
+      const whereClause: Prisma.PaymentWhereInput = {
         invoice: {
           companyId: ctx.companyId,
+          ...(input?.customerId && { customerId: input.customerId }),
         },
+        ...(input?.invoiceId && { invoiceId: input.invoiceId }),
       };
-
-      if (input?.customerId) {
-        whereClause.invoice.customerId = input.customerId;
-      }
-
-      if (input?.invoiceId) {
-        whereClause.invoiceId = input.invoiceId;
-      }
 
       try {
         const payments = await ctx.db.payment.findMany({
@@ -63,7 +58,7 @@ export const paymentRouter = createTRPCRouter({
     }),
 
   // Create new payment
-  create: publicProcedure
+  create: protectedProcedure
     .input(createPaymentSchema)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.companyId) {
@@ -93,6 +88,7 @@ export const paymentRouter = createTRPCRouter({
         // Create payment
         const payment = await ctx.db.payment.create({
           data: {
+            id: idGenerator.payment(),
             invoiceId: input.invoiceId,
             customerId: invoice.customerId,
             companyId: ctx.companyId,
@@ -139,7 +135,7 @@ export const paymentRouter = createTRPCRouter({
     }),
 
   // Get payment statistics
-  getStats: publicProcedure
+  getStats: protectedProcedure
     .input(z.object({
       customerId: z.string().optional(),
       dateRange: z.string().optional(),
@@ -173,6 +169,7 @@ export const paymentRouter = createTRPCRouter({
           where: {
             companyId: ctx.companyId,
             customerId: input?.customerId,
+            status: { in: ['GENERATED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID', 'PAID'] }, // Exclude DRAFT
           },
           _sum: {
             grandTotal: true,
@@ -185,11 +182,21 @@ export const paymentRouter = createTRPCRouter({
         const totalPaid = invoicesResult._sum.paidAmount || 0;
         const outstanding = totalBilled - totalPaid;
 
+        const outstandingCount = await ctx.db.invoice.count({
+          where: {
+            companyId: ctx.companyId,
+            customerId: input?.customerId,
+            status: { in: ['GENERATED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID'] }, // Exclude DRAFT and PAID
+          },
+        });
+
         return {
           totalReceived,
           outstanding,
+          outstandingCount,
           thisMonth: totalReceived, // Simplified for now
           averageDays: 0, // Would need more complex calculation
+          receivedCount: paymentsResult._count,
         };
       } catch (error) {
         console.error('Payment stats error:', error);
@@ -203,7 +210,7 @@ export const paymentRouter = createTRPCRouter({
     }),
 
   // Get recent payments
-  getRecent: publicProcedure
+  getRecent: protectedProcedure
     .input(z.object({
       limit: z.number().min(1).max(50).default(10),
     }).optional())

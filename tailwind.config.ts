@@ -8,7 +8,8 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
 
-  // Performance optimizations
+  // Performance optimizations (Tailwind v4 has preflight enabled by default)
+  // @ts-expect-error - corePlugins is deprecated in v4 but still supported at runtime
   corePlugins: {
     preflight: true,
   },
@@ -46,9 +47,50 @@ const config: Config = {
         'phi-sm': 'calc(var(--phi) * 0.5rem)',
         'phi-lg': 'calc(var(--phi) * 1.5rem)',
         'phi-xl': 'calc(var(--phi) * 2rem)',
+        // Sidebar-specific widths
+        '18': '4.5rem',  // 72px - collapsed sidebar
+        '60': '15rem',   // 240px - expanded sidebar
       },
-      // Professional color system using CSS variables
+      // AURA DESIGN SYSTEM COLORS (CORRECTED RGB FORMAT)
       colors: {
+        // Core Aura colors
+        "aura-blue-primary": "rgb(var(--aura-blue-primary))",
+        "aura-blue-secondary": "rgb(var(--aura-blue-secondary))",
+        "aura-white": "rgb(var(--aura-white))",
+        "aura-success": "rgb(var(--aura-success))",
+        "aura-warning": "rgb(var(--aura-warning))",
+        "aura-error": "rgb(var(--aura-error))",
+        "aura-info": "rgb(var(--aura-info))",
+
+        // Aura gray scale
+        "aura-gray-50": "rgb(var(--aura-gray-50))",
+        "aura-gray-100": "rgb(var(--aura-gray-100))",
+        "aura-gray-200": "rgb(var(--aura-gray-200))",
+        "aura-gray-300": "rgb(var(--aura-gray-300))",
+        "aura-gray-400": "rgb(var(--aura-gray-400))",
+        "aura-gray-500": "rgb(var(--aura-gray-500))",
+        "aura-gray-600": "rgb(var(--aura-gray-600))",
+        "aura-gray-700": "rgb(var(--aura-gray-700))",
+        "aura-gray-800": "rgb(var(--aura-gray-800))",
+        "aura-gray-900": "rgb(var(--aura-gray-900))",
+
+        // Aura semantic surfaces
+        "surface-primary": "rgb(var(--surface-primary))",
+        "surface-secondary": "rgb(var(--surface-secondary))",
+        "surface-tertiary": "rgb(var(--surface-tertiary))",
+
+        // Aura text hierarchy
+        "text-primary": "rgb(var(--text-primary))",
+        "text-secondary": "rgb(var(--text-secondary))",
+        "text-tertiary": "rgb(var(--text-tertiary))",
+        "text-disabled": "rgb(var(--text-disabled))",
+
+        // Aura border hierarchy
+        "border-primary": "rgb(var(--border-primary))",
+        "border-secondary": "rgb(var(--border-secondary))",
+        "border-focus": "rgb(var(--border-focus))",
+
+        // Legacy compatibility
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -129,6 +171,58 @@ const config: Config = {
           700: "#b91c1c",
           800: "#991b1b",
           900: "#7f1d1d",
+        },
+        // Add gray scale for component compatibility
+        gray: {
+          50: "#f9fafb",
+          100: "#f3f4f6",
+          200: "#e5e7eb",
+          300: "#d1d5db",
+          400: "#9ca3af",
+          500: "#6b7280",
+          600: "#4b5563",
+          700: "#374151",
+          800: "#1f2937",
+          900: "#111827",
+        },
+        // Add blue scale for component compatibility
+        blue: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+        },
+        // Add yellow scale for warning states
+        yellow: {
+          50: "#fefce8",
+          100: "#fef9c3",
+          200: "#fef08a",
+          300: "#fde047",
+          400: "#facc15",
+          500: "#eab308",
+          600: "#ca8a04",
+          700: "#a16207",
+          800: "#854d0e",
+          900: "#713f12",
+        },
+        // Add indigo scale for gradients
+        indigo: {
+          50: "#eef2ff",
+          100: "#e0e7ff",
+          200: "#c7d2fe",
+          300: "#a5b4fc",
+          400: "#818cf8",
+          500: "#6366f1",
+          600: "#4f46e5",
+          700: "#4338ca",
+          800: "#3730a3",
+          900: "#312e81",
         },
         neutral: {
           50: "hsl(0 0 98)",

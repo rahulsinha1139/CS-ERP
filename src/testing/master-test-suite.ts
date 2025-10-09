@@ -6,6 +6,65 @@
 import { PerformanceTestFramework, PerformanceMetrics } from './performance-testing';
 import { SecurityTestFramework, SecurityTestResult } from './security-testing';
 
+// Test result interfaces
+interface BusinessLogicTestResult {
+  test: string;
+  input?: unknown;
+  expected?: string | boolean;
+  result?: string;
+  passed: boolean;
+  error?: string;
+  field?: string;
+  length?: number;
+  value?: number;
+  operation?: string;
+  actual?: string;
+  username?: string | null;
+}
+
+interface IntegrationTestResult {
+  test: string;
+  passed: boolean;
+  error?: string;
+  duration?: number;
+  details?: string;
+}
+
+interface E2ETestResult {
+  test: string;
+  passed: boolean;
+  error?: string;
+  duration?: number;
+  steps?: string[];
+  metrics?: {
+    responseTime?: number;
+    throughput?: number;
+    errorRate?: number;
+  };
+}
+
+type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+interface AuthenticationCredentials {
+  username: string | null;
+  password: string | null;
+}
+
+interface BusinessOperationScenario {
+  operation: string;
+  customerId?: string | null;
+  invoiceId?: string;
+  expected: string;
+}
+
+interface WorkflowTestResult {
+  test: string;
+  passed: boolean;
+  duration?: number;
+  steps?: string[];
+  error?: string;
+}
+
 interface TestSuiteConfig {
   environment: 'development' | 'staging' | 'production';
   coverage: 'basic' | 'standard' | 'comprehensive';
@@ -25,18 +84,18 @@ interface TestSuiteResults {
   };
   performance: PerformanceMetrics[];
   security: SecurityTestResult[];
-  businessLogic: any[];
-  integration: any[];
-  e2e: any[];
+  businessLogic: BusinessLogicTestResult[];
+  integration: IntegrationTestResult[];
+  e2e: E2ETestResult[];
   riskAssessment: RiskAssessment;
   recommendations: string[];
 }
 
 interface RiskAssessment {
-  overallRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  securityRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  performanceRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  businessRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  overallRisk: RiskLevel;
+  securityRisk: RiskLevel;
+  performanceRisk: RiskLevel;
+  businessRisk: RiskLevel;
   details: string[];
 }
 
@@ -251,7 +310,7 @@ class MasterTestSuite {
   /**
    * Edge Case Testing Implementation
    */
-  private async runEdgeCaseTests(): Promise<any[]> {
+  private async runEdgeCaseTests(): Promise<BusinessLogicTestResult[]> {
     const testResults = [];
 
     // GST Edge Cases
@@ -315,7 +374,7 @@ class MasterTestSuite {
   /**
    * Boundary Testing Implementation
    */
-  private async runBoundaryTests(): Promise<any[]> {
+  private async runBoundaryTests(): Promise<BusinessLogicTestResult[]> {
     const testResults = [];
 
     // String Length Boundaries
@@ -384,7 +443,7 @@ class MasterTestSuite {
   /**
    * Negative Scenario Testing
    */
-  private async runNegativeScenarioTests(): Promise<any[]> {
+  private async runNegativeScenarioTests(): Promise<BusinessLogicTestResult[]> {
     const testResults = [];
 
     // Invalid Authentication Attempts
@@ -449,7 +508,7 @@ class MasterTestSuite {
   /**
    * E2E Business Workflows Testing
    */
-  private async runE2EBusinessWorkflows(): Promise<any[]> {
+  private async runE2EBusinessWorkflows(): Promise<E2ETestResult[]> {
     const workflows = [
       this.testCustomerInvoicePaymentWorkflow(),
       this.testRecurringContractWorkflow(),
@@ -465,7 +524,7 @@ class MasterTestSuite {
   /**
    * Integration Testing
    */
-  private async runIntegrationTests(): Promise<any[]> {
+  private async runIntegrationTests(): Promise<IntegrationTestResult[]> {
     const integrationTests = [
       this.testEmailIntegration(),
       this.testWhatsAppIntegration(),
@@ -481,7 +540,7 @@ class MasterTestSuite {
   /**
    * Production Scenario Testing
    */
-  private async runProductionScenarioTests(): Promise<any[]> {
+  private async runProductionScenarioTests(): Promise<E2ETestResult[]> {
     const scenarios = [
       this.testHighVolumeProcessing(),
       this.testPeakLoadScenarios(),
@@ -511,10 +570,10 @@ class MasterTestSuite {
                        riskLevels.includes('MEDIUM') ? 'MEDIUM' : 'LOW';
 
     return {
-      overallRisk: overallRisk as any,
-      securityRisk: securityRisk as any,
-      performanceRisk: performanceRisk as any,
-      businessRisk: businessRisk as any,
+      overallRisk: overallRisk as RiskLevel,
+      securityRisk: securityRisk as RiskLevel,
+      performanceRisk: performanceRisk as RiskLevel,
+      businessRisk: businessRisk as RiskLevel,
       details: [
         `Security issues: ${securityFailures}`,
         `Performance issues: ${performanceIssues}`,
@@ -624,11 +683,11 @@ class MasterTestSuite {
     return { valid: value >= 0 && value <= 1000000 };
   }
 
-  private async simulateAuthentication(username: any, password: any): Promise<{ success: boolean }> {
+  private async simulateAuthentication(username: string | null, password: string | null): Promise<{ success: boolean }> {
     return { success: false }; // Simulating rejection for negative tests
   }
 
-  private async simulateBusinessOperation(scenario: any): Promise<{ success: boolean }> {
+  private async simulateBusinessOperation(scenario: BusinessOperationScenario): Promise<{ success: boolean }> {
     return { success: false }; // Simulating rejection for negative tests
   }
 
@@ -641,21 +700,21 @@ class MasterTestSuite {
   }
 
   // Stub implementations for workflow tests
-  private async testCustomerInvoicePaymentWorkflow(): Promise<any> { return { test: 'Customer-Invoice-Payment', passed: true }; }
-  private async testRecurringContractWorkflow(): Promise<any> { return { test: 'Recurring Contract', passed: true }; }
-  private async testComplianceWorkflow(): Promise<any> { return { test: 'Compliance', passed: true }; }
-  private async testReportingWorkflow(): Promise<any> { return { test: 'Reporting', passed: true }; }
-  private async testMultiUserWorkflow(): Promise<any> { return { test: 'Multi-User', passed: true }; }
-  private async testEmailIntegration(): Promise<any> { return { test: 'Email Integration', passed: true }; }
-  private async testWhatsAppIntegration(): Promise<any> { return { test: 'WhatsApp Integration', passed: true }; }
-  private async testPaymentGatewayIntegration(): Promise<any> { return { test: 'Payment Gateway', passed: true }; }
-  private async testFileStorageIntegration(): Promise<any> { return { test: 'File Storage', passed: true }; }
-  private async testDatabaseIntegration(): Promise<any> { return { test: 'Database Integration', passed: true }; }
-  private async testHighVolumeProcessing(): Promise<any> { return { test: 'High Volume', passed: true }; }
-  private async testPeakLoadScenarios(): Promise<any> { return { test: 'Peak Load', passed: true }; }
-  private async testDataMigrationScenarios(): Promise<any> { return { test: 'Data Migration', passed: true }; }
-  private async testDisasterRecoveryScenarios(): Promise<any> { return { test: 'Disaster Recovery', passed: true }; }
-  private async testScalingScenarios(): Promise<any> { return { test: 'Scaling', passed: true }; }
+  private async testCustomerInvoicePaymentWorkflow(): Promise<E2ETestResult> { return { test: 'Customer-Invoice-Payment', passed: true }; }
+  private async testRecurringContractWorkflow(): Promise<E2ETestResult> { return { test: 'Recurring Contract', passed: true }; }
+  private async testComplianceWorkflow(): Promise<E2ETestResult> { return { test: 'Compliance', passed: true }; }
+  private async testReportingWorkflow(): Promise<E2ETestResult> { return { test: 'Reporting', passed: true }; }
+  private async testMultiUserWorkflow(): Promise<E2ETestResult> { return { test: 'Multi-User', passed: true }; }
+  private async testEmailIntegration(): Promise<IntegrationTestResult> { return { test: 'Email Integration', passed: true }; }
+  private async testWhatsAppIntegration(): Promise<IntegrationTestResult> { return { test: 'WhatsApp Integration', passed: true }; }
+  private async testPaymentGatewayIntegration(): Promise<IntegrationTestResult> { return { test: 'Payment Gateway', passed: true }; }
+  private async testFileStorageIntegration(): Promise<IntegrationTestResult> { return { test: 'File Storage', passed: true }; }
+  private async testDatabaseIntegration(): Promise<IntegrationTestResult> { return { test: 'Database Integration', passed: true }; }
+  private async testHighVolumeProcessing(): Promise<E2ETestResult> { return { test: 'High Volume', passed: true }; }
+  private async testPeakLoadScenarios(): Promise<E2ETestResult> { return { test: 'Peak Load', passed: true }; }
+  private async testDataMigrationScenarios(): Promise<E2ETestResult> { return { test: 'Data Migration', passed: true }; }
+  private async testDisasterRecoveryScenarios(): Promise<E2ETestResult> { return { test: 'Disaster Recovery', passed: true }; }
+  private async testScalingScenarios(): Promise<E2ETestResult> { return { test: 'Scaling', passed: true }; }
 }
 
 export { MasterTestSuite };

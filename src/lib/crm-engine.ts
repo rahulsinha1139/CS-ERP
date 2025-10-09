@@ -5,10 +5,10 @@
  */
 
 // Mathematical constants for optimization
-const GOLDEN_RATIO = 1.618033988;
-const ENGAGEMENT_WEIGHT_DECAY = 0.95; // Weekly decay for engagement scoring
-const RISK_ASSESSMENT_FACTORS = 7; // Number of factors in risk assessment
-const SEGMENTATION_CLUSTERS = Math.floor(GOLDEN_RATIO * 5); // 8 customer segments
+// const GOLDEN_RATIO = 1.618033988; // Unused - removed
+// const ENGAGEMENT_WEIGHT_DECAY = 0.95; // Weekly decay for engagement scoring - unused
+// const RISK_ASSESSMENT_FACTORS = 7; // Number of factors in risk assessment - unused
+// const SEGMENTATION_CLUSTERS = Math.floor(GOLDEN_RATIO * 5); // 8 customer segments - unused
 
 export enum CustomerTier {
   PLATINUM = 'PLATINUM',
@@ -47,6 +47,82 @@ export enum LifecycleStage {
   AT_RISK = 'AT_RISK',
   CHURNED = 'CHURNED',
   WIN_BACK = 'WIN_BACK',
+}
+
+// Type definitions for custom fields and metadata
+export type CustomFieldValue = string | number | boolean | Date | null | undefined;
+
+export interface InteractionMetadata {
+  source?: string;
+  channel?: string;
+  location?: string;
+  deviceType?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  referenceId?: string;
+  tags?: string[];
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  category?: string;
+  subcategory?: string;
+  relatedDocuments?: string[];
+  customProperties?: Record<string, CustomFieldValue>;
+}
+
+export interface CustomerInsightMetadata {
+  source?: string;
+  algorithm?: string;
+  dataPoints?: string[];
+  confidence?: number;
+  riskLevel?: CustomerRiskLevel;
+  trend?: number;
+  recentRevenue?: number[];
+  recentComplaints?: number;
+  hasRecentPositiveInteractions?: boolean;
+  currentTier?: CustomerTier;
+  channelCounts?: Record<InteractionType, number>;
+  preferredChannel?: string;
+  onTimeRate?: number;
+  averageDelay?: number;
+  analysisDate?: Date;
+  customData?: Record<string, CustomFieldValue>;
+}
+
+export interface CompetitorAnalysis {
+  competitorName: string;
+  marketShare?: number;
+  strengths?: string[];
+  weaknesses?: string[];
+  pricingStrategy?: 'PREMIUM' | 'COMPETITIVE' | 'DISCOUNT';
+  serviceOfferings?: string[];
+  customerOverlap?: number;
+  threatLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  lastUpdated?: Date;
+  customAttributes?: Record<string, CustomFieldValue>;
+}
+
+export interface MarketTrends {
+  industry: string;
+  growthRate?: number;
+  marketSize?: number;
+  emergingTechnologies?: string[];
+  regulatoryChanges?: string[];
+  customerDemands?: string[];
+  pricingTrends?: 'INCREASING' | 'DECREASING' | 'STABLE';
+  seasonalFactors?: string[];
+  economicIndicators?: Record<string, number>;
+  forecastPeriod?: { start: Date; end: Date };
+  confidence?: number;
+  customData?: Record<string, CustomFieldValue>;
+}
+
+export interface SegmentationCriteria {
+  revenue?: { min?: number; max?: number };
+  tier?: CustomerTier[];
+  industry?: string[];
+  location?: string[];
+  riskLevel?: CustomerRiskLevel[];
+  engagementScore?: { min?: number; max?: number };
+  customFields?: Record<string, CustomFieldValue>;
 }
 
 export interface CustomerProfile {
@@ -96,7 +172,7 @@ export interface CustomerProfile {
   };
 
   // Custom fields
-  customFields: Record<string, any>;
+  customFields: Record<string, CustomFieldValue>;
   tags: string[];
   notes: string;
 }
@@ -116,22 +192,14 @@ export interface CustomerInteraction {
   attachments: string[];
   performedBy: string;
   timestamp: Date;
-  metadata: Record<string, any>;
+  metadata: InteractionMetadata;
 }
 
 export interface CustomerSegment {
   id: string;
   name: string;
   description: string;
-  criteria: {
-    revenue?: { min?: number; max?: number };
-    tier?: CustomerTier[];
-    industry?: string[];
-    location?: string[];
-    riskLevel?: CustomerRiskLevel[];
-    engagementScore?: { min?: number; max?: number };
-    customFields?: Record<string, any>;
-  };
+  criteria: SegmentationCriteria;
   customerCount: number;
   totalRevenue: number;
   averageRevenue: number;
@@ -202,7 +270,7 @@ export interface CustomerInsight {
   confidence: number; // 0-100%
   generatedAt: Date;
   validUntil?: Date;
-  metadata: Record<string, any>;
+  metadata: CustomerInsightMetadata;
 }
 
 export class CRMEngine {
@@ -432,8 +500,8 @@ export class CRMEngine {
     interactions: CustomerInteraction[],
     historicalData: {
       revenueHistory: Array<{ month: Date; revenue: number }>;
-      competitorAnalysis?: any;
-      marketTrends?: any;
+      competitorAnalysis?: CompetitorAnalysis[];
+      marketTrends?: MarketTrends;
     }
   ): CustomerInsight[] {
     const insights: CustomerInsight[] = [];
@@ -700,7 +768,7 @@ export class CRMEngine {
 
   private customerMatchesSegment(
     customer: CustomerProfile,
-    criteria: CustomerSegment['criteria']
+    criteria: SegmentationCriteria
   ): boolean {
     // Revenue criteria
     if (criteria.revenue) {
@@ -883,12 +951,12 @@ export class CRMEngine {
     return outbound > 0 ? (inbound / outbound) * 100 : 100;
   }
 
-  private calculateAverageResponseTime(interactions: CustomerInteraction[]): number {
+  private calculateAverageResponseTime(_interactions: CustomerInteraction[]): number {
     // Simplified calculation - would need more sophisticated logic in real implementation
     return 4; // Average 4 hours response time
   }
 
-  private calculateRevenueGrowthRate(customers: CustomerProfile[], timeframe: { start: Date; end: Date }): number {
+  private calculateRevenueGrowthRate(_customers: CustomerProfile[], _timeframe: { start: Date; end: Date }): number {
     // Simplified calculation - would use more sophisticated time series analysis
     return 15.2; // 15.2% growth rate
   }
@@ -913,12 +981,12 @@ export class CRMEngine {
       customersWithNPS.reduce((sum, c) => sum + (c.npsScore || 0), 0) / customersWithNPS.length : 0;
   }
 
-  private calculateAverageComplaintResolutionTime(interactions: CustomerInteraction[]): number {
+  private calculateAverageComplaintResolutionTime(_interactions: CustomerInteraction[]): number {
     // Simplified calculation - would need more sophisticated tracking
     return 24; // 24 hours average resolution time
   }
 
-  private calculateMonthlyCustomerGrowth(customers: CustomerProfile[], timeframe: { start: Date; end: Date }) {
+  private calculateMonthlyCustomerGrowth(_customers: CustomerProfile[], _timeframe: { start: Date; end: Date }) {
     // Simplified calculation - would use actual monthly data
     return [
       { month: new Date(2024, 0, 1), newCustomers: 5, churnedCustomers: 1, netGrowth: 4 },
@@ -927,7 +995,7 @@ export class CRMEngine {
     ];
   }
 
-  private calculateEngagementTrends(interactions: CustomerInteraction[], timeframe: { start: Date; end: Date }) {
+  private calculateEngagementTrends(_interactions: CustomerInteraction[], _timeframe: { start: Date; end: Date }) {
     // Simplified calculation - would use actual weekly data
     return [
       { week: new Date(2024, 2, 1), averageEngagementScore: 65, totalInteractions: 45 },

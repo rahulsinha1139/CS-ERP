@@ -7,8 +7,8 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import { api } from '@/lib/trpc-client';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { api } from '@/utils/api';
+import { formatCurrency } from '@/lib/utils';
 import { PaymentMethod } from '@prisma/client';
 
 interface PaymentFormData {
@@ -34,17 +34,21 @@ export default function NewPaymentPage() {
   });
 
   // Fetch invoices for selection
-  const { data: invoices, isLoading: invoicesLoading } = api.invoice.getPayableInvoices.useQuery();
+  const { data: invoices } = api.invoice.getPayableInvoices.useQuery(undefined, {
+    enabled: typeof window !== 'undefined', // Only run on client
+  });
 
   // Get selected invoice details
   const { data: selectedInvoice } = api.invoice.getById.useQuery(
     { id: formData.invoiceId },
-    { enabled: !!formData.invoiceId }
+    {
+      enabled: !!formData.invoiceId && typeof window !== 'undefined' // Only run on client with valid ID
+    }
   );
 
   // Payment creation mutation
   const createPaymentMutation = api.payment.create.useMutation({
-    onSuccess: (payment) => {
+    onSuccess: () => {
       router.push('/payments');
     },
     onError: (error) => {
@@ -107,10 +111,10 @@ export default function NewPaymentPage() {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={createPaymentMutation.isLoading || !formData.invoiceId || !formData.amount}
+              disabled={createPaymentMutation.isPending || !formData.invoiceId || !formData.amount}
               className="bg-success-500 hover:bg-success-600 disabled:bg-neutral-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              {createPaymentMutation.isLoading ? 'Recording...' : 'Record Payment'}
+              {createPaymentMutation.isPending ? 'Recording...' : 'Record Payment'}
             </button>
           </div>
         }
@@ -288,10 +292,10 @@ export default function NewPaymentPage() {
               </button>
               <button
                 type="submit"
-                disabled={createPaymentMutation.isLoading || !formData.invoiceId || !formData.amount}
+                disabled={createPaymentMutation.isPending || !formData.invoiceId || !formData.amount}
                 className="px-6 py-2 bg-success-500 hover:bg-success-600 disabled:bg-neutral-300 text-white rounded-lg transition-colors"
               >
-                {createPaymentMutation.isLoading ? 'Recording...' : 'Record Payment'}
+                {createPaymentMutation.isPending ? 'Recording...' : 'Record Payment'}
               </button>
             </div>
           </form>

@@ -5,10 +5,12 @@
 
 import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
-import { api } from '@/lib/trpc-client'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
-import { Input } from '../ui/input'
+import { api } from '@/utils/api';
+import { AuraButton } from '../ui/aura-button'
+import { AuraCard, AuraCardContent } from '../ui/aura-card'
+import { AuraInput } from '../ui/aura-input'
+import { AuraSelect } from '../ui/aura-select'
+import { AuraLoadingCard } from '../ui/aura-components'
 import {
   Users,
   Search,
@@ -47,8 +49,8 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
     return () => clearTimeout(timer)
   }, [search])
 
-  // Fetch customers with financial summary - using debounced search
-  const { data: customersData, isLoading, error, refetch } = api.customer.getAll.useQuery({
+  // HIGH-PERFORMANCE: Fetch customers with optimized server-side summaries
+  const { data: customersData, isLoading, error, refetch } = api.customer.getAllWithSummary.useQuery({
     page: currentPage,
     limit: 20,
     search: debouncedSearch || undefined,
@@ -58,7 +60,7 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
     // Enable automatic refetching when data changes
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
+    gcTime: 10 * 60 * 1000, // Cache for 10 minutes
   })
 
   const customers = customersData?.customers || []
@@ -89,7 +91,7 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
   // Get status color
   const getStatusColor = (outstandingAmount: number, overdueInvoices: number) => {
     if (overdueInvoices > 0) return 'text-red-600 bg-red-50'
-    if (outstandingAmount > 0) return 'text-yellow-600 bg-yellow-50'
+    if (outstandingAmount > 0) return 'text-blue-600 bg-blue-50'
     return 'text-green-600 bg-green-50'
   }
 
@@ -106,7 +108,7 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
         <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to load customers</h2>
         <p className="text-gray-600 mb-4">There was an error loading the customer list.</p>
-        <Button onClick={() => refetch()}>Try Again</Button>
+        <AuraButton onClick={() => refetch()}>Try Again</AuraButton>
       </div>
     )
   }
@@ -128,77 +130,66 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
                 Customer Directory
               </h1>
               <p className="text-gray-600 font-medium">
-                {pagination ? `${pagination.totalCount} active customers` : 'Loading customer data...'}
-              </p>
+                {pagination ? `${pagination.total} active customers` : 'Loading customer data...'}              </p>
             </div>
           </div>
 
-          <Button
+          <AuraButton
+            variant="primary"
+            icon={<Plus className="h-5 w-5" />}
             onClick={handleCreateCustomer}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 rounded-xl"
+            className="px-6 py-3"
           >
-            <Plus className="h-5 w-5" />
             Add New Customer
-          </Button>
+          </AuraButton>
         </div>
       </div>
 
       {/* Enhanced Search and Filters */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-200/50">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
-              placeholder="Search customers by name, email, phone, or GSTIN..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-12 pr-4 py-3 bg-gray-50/50 border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-sm"
-            />
-          </div>
+      <AuraCard className="bg-white/80 backdrop-blur-sm">
+        <AuraCardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <AuraInput
+                placeholder="Search customers by name, email, phone, or GSTIN..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon={<Search className="h-5 w-5" />}
+                className="bg-gray-50/50 py-3"
+              />
+            </div>
 
-          <div className="flex gap-3">
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-              <select
+            <div className="flex gap-3">
+              <AuraSelect
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="pl-10 pr-8 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white transition-all duration-200 appearance-none cursor-pointer min-w-[160px]"
+                icon={<Filter className="h-4 w-4" />}
+                className="min-w-[160px] py-3 bg-gray-50/50"
               >
                 <option value="name">Sort by Name</option>
                 <option value="email">Sort by Email</option>
                 <option value="createdAt">Sort by Date Added</option>
                 <option value="totalBilled">Sort by Revenue</option>
-              </select>
-            </div>
+              </AuraSelect>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="px-4 py-3 bg-gray-50/50 hover:bg-white border-gray-200 rounded-xl transition-all duration-200 hover:shadow-sm"
-            >
-              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
-            </Button>
+              <AuraButton
+                variant="secondary"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-4 py-3"
+              >
+                {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+              </AuraButton>
+            </div>
           </div>
-        </div>
-      </div>
+        </AuraCardContent>
+      </AuraCard>
 
       {/* Customer List */}
       {isLoading ? (
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <Card key={i} className="p-6 animate-pulse">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-32"></div>
-                    <div className="h-3 bg-gray-200 rounded w-24"></div>
-                  </div>
-                </div>
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
-              </div>
-            </Card>
+            <AuraLoadingCard key={i} className="p-6 h-32" />
           ))}
         </div>
       ) : customers.length === 0 ? (
@@ -213,34 +204,36 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
               : 'Get started by adding your first customer to the system.'}
           </p>
           {!search && (
-            <Button onClick={handleCreateCustomer}>Add Your First Customer</Button>
+            <AuraButton variant="primary" onClick={handleCreateCustomer}>Add Your First Customer</AuraButton>
           )}
         </div>
       ) : (
         <div className="space-y-4">
           {customers.map((customer) => {
-            const { financialSummary } = customer
+            // OPTIMIZED: Use pre-calculated summary from server
+            const { summary } = customer
 
-            // Handle missing financial summary
-            if (!financialSummary) {
+            // Handle missing summary (safety check)
+            if (!summary) {
               return null
             }
 
-            const statusColor = getStatusColor(financialSummary.totalOutstanding, financialSummary.overdueInvoices)
-            const statusText = getStatusText(financialSummary.totalOutstanding, financialSummary.overdueInvoices)
+            const statusColor = getStatusColor(summary.totalOutstanding, summary.overdueInvoices)
+            const statusText = getStatusText(summary.totalOutstanding, summary.overdueInvoices)
 
             return (
-              <Card
+              <AuraCard
                 key={customer.id}
-                className={`group relative p-6 transition-all duration-300 ease-out transform hover:scale-[1.02] hover:-translate-y-1 ${
-                  financialSummary.overdueInvoices > 0
+                className={`group relative transition-all duration-300 ease-out transform hover:scale-[1.02] hover:-translate-y-1 ${
+                  summary.overdueInvoices > 0
                     ? 'bg-gradient-to-br from-red-50/50 via-white to-red-50/30 border-l-4 border-l-red-500 hover:shadow-xl hover:border-l-red-600 hover:from-red-100/60 hover:to-red-50/40'
-                    : financialSummary.totalOutstanding > 0
-                    ? 'bg-gradient-to-br from-amber-50/50 via-white to-yellow-50/30 border-l-4 border-l-amber-500 hover:shadow-xl hover:border-l-amber-600 hover:from-amber-100/60 hover:to-yellow-50/40'
+                    : summary.totalOutstanding > 0
+                    ? 'bg-gradient-to-br from-blue-50/50 via-white to-blue-50/30 border-l-4 border-l-blue-500 hover:shadow-xl hover:border-l-blue-600 hover:from-blue-100/60 hover:to-blue-50/40'
                     : 'bg-gradient-to-br from-emerald-50/50 via-white to-green-50/30 border-l-4 border-l-emerald-500 hover:shadow-xl hover:border-l-emerald-600 hover:from-emerald-100/60 hover:to-green-50/40'
-                } ${selectable ? 'cursor-pointer' : ''} rounded-xl border border-gray-200/50 backdrop-blur-sm`}
+                } ${selectable ? 'cursor-pointer' : ''} backdrop-blur-sm`}
                 onClick={selectable ? () => handleCustomerClick(customer.id) : undefined}
               >
+                <AuraCardContent className="p-6">
                 <div className="flex items-start justify-between">
                   {/* Customer Info */}
                   <div className="flex items-start space-x-5 flex-1">
@@ -296,20 +289,20 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
                             <div>
                               <p className="text-xs font-medium text-green-700">Total Billed</p>
                               <p className="font-bold text-green-900 text-sm">
-                                {formatCurrency(financialSummary.totalBilled)}
+                                {formatCurrency(summary.totalBilled)}
                               </p>
                             </div>
                           </div>
                         </div>
 
                         <div className={`p-4 rounded-xl border transition-all duration-200 ${
-                          financialSummary.totalOutstanding > 0
+                          summary.totalOutstanding > 0
                             ? 'bg-gradient-to-br from-red-50 to-pink-50 border-red-100 group-hover:from-red-100 group-hover:to-pink-100'
                             : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-100 group-hover:from-gray-100 group-hover:to-slate-100'
                         }`}>
                           <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-lg ${
-                              financialSummary.totalOutstanding > 0
+                              summary.totalOutstanding > 0
                                 ? 'bg-gradient-to-br from-red-500 to-pink-600'
                                 : 'bg-gradient-to-br from-gray-500 to-slate-600'
                             }`}>
@@ -317,12 +310,12 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
                             </div>
                             <div>
                               <p className={`text-xs font-medium ${
-                                financialSummary.totalOutstanding > 0 ? 'text-red-700' : 'text-gray-700'
+                                summary.totalOutstanding > 0 ? 'text-red-700' : 'text-gray-700'
                               }`}>Outstanding</p>
                               <p className={`font-bold text-sm ${
-                                financialSummary.totalOutstanding > 0 ? 'text-red-900' : 'text-gray-900'
+                                summary.totalOutstanding > 0 ? 'text-red-900' : 'text-gray-900'
                               }`}>
-                                {formatCurrency(financialSummary.totalOutstanding)}
+                                {formatCurrency(summary.totalOutstanding)}
                               </p>
                             </div>
                           </div>
@@ -336,20 +329,20 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
                             <div>
                               <p className="text-xs font-medium text-blue-700">Total Invoices</p>
                               <p className="font-bold text-blue-900 text-sm">
-                                {financialSummary.totalInvoices}
+                                {summary.totalInvoices}
                               </p>
                             </div>
                           </div>
                         </div>
 
                         <div className={`p-4 rounded-xl border transition-all duration-200 ${
-                          financialSummary.overdueInvoices > 0
+                          summary.overdueInvoices > 0
                             ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-100 group-hover:from-orange-100 group-hover:to-red-100'
                             : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-100 group-hover:from-gray-100 group-hover:to-slate-100'
                         }`}>
                           <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-lg ${
-                              financialSummary.overdueInvoices > 0
+                              summary.overdueInvoices > 0
                                 ? 'bg-gradient-to-br from-orange-500 to-red-600'
                                 : 'bg-gradient-to-br from-gray-400 to-slate-500'
                             }`}>
@@ -357,12 +350,12 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
                             </div>
                             <div>
                               <p className={`text-xs font-medium ${
-                                financialSummary.overdueInvoices > 0 ? 'text-orange-700' : 'text-gray-700'
+                                summary.overdueInvoices > 0 ? 'text-orange-700' : 'text-gray-700'
                               }`}>Overdue</p>
                               <p className={`font-bold text-sm ${
-                                financialSummary.overdueInvoices > 0 ? 'text-orange-900' : 'text-gray-900'
+                                summary.overdueInvoices > 0 ? 'text-orange-900' : 'text-gray-900'
                               }`}>
-                                {financialSummary.overdueInvoices}
+                                {summary.overdueInvoices}
                               </p>
                             </div>
                           </div>
@@ -380,7 +373,8 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
                     </div>
                   )}
                 </div>
-              </Card>
+                </AuraCardContent>
+              </AuraCard>
             )
           })}
         </div>
@@ -390,31 +384,31 @@ const CustomerList = React.memo(function CustomerList({ onCustomerSelect, select
       {pagination && pagination.pages > 1 && (
         <div className="flex items-center justify-between border-t pt-6">
           <div className="text-sm text-gray-700">
-            Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, pagination.totalCount)} of {pagination.totalCount} customers
+            Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} customers
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
+            <AuraButton
+              variant="secondary"
               size="sm"
               onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage <= 1}
             >
               Previous
-            </Button>
+            </AuraButton>
 
             <span className="text-sm text-gray-700">
               Page {currentPage} of {pagination.pages}
             </span>
 
-            <Button
-              variant="outline"
+            <AuraButton
+              variant="secondary"
               size="sm"
               onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage >= pagination.pages}
             >
               Next
-            </Button>
+            </AuraButton>
           </div>
         </div>
       )}

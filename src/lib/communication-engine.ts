@@ -1,10 +1,11 @@
 /**
  * Professional Communication Engine with Resend & WhatsApp
- * Optimized using Asymm mathematical principles
+ * Optimized for Mrs. Pragnya Pradhan's CS Practice
+ * Single-user focus with expansion-ready architecture
  */
 
 import { Resend } from 'resend'
-import crypto from 'crypto'
+import * as crypto from 'crypto'
 
 // Mathematical constants from Asymm protocol
 const GOLDEN_RATIO = 1.618033988
@@ -12,7 +13,7 @@ const RETRY_BASE_DELAY = 1000 // 1 second
 const MAX_RETRIES = 5
 
 // Environment variables
-const RESEND_API_KEY = process.env.RESEND_API_KEY
+// const RESEND_API_KEY = process.env.RESEND_API_KEY // Unused - removed
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-32-byte-key-for-dev-only!!'
 
 export interface EmailMessage {
@@ -36,7 +37,21 @@ export interface WhatsAppMessage {
   content: string
   mediaUrl?: string
   templateId?: string
-  templateData?: Record<string, any>
+  templateData?: Record<string, unknown>
+}
+
+interface ResendMetadata {
+  data?: {
+    id?: string
+  }
+  [key: string]: unknown
+}
+
+interface TwilioMetadata {
+  sid?: string
+  price?: string
+  message?: string
+  [key: string]: unknown
 }
 
 export interface DeliveryResult {
@@ -44,8 +59,12 @@ export interface DeliveryResult {
   status: 'sent' | 'failed'
   provider: string
   cost?: number
-  metadata?: any
+  metadata?: ResendMetadata | TwilioMetadata
   error?: string
+}
+
+interface WebhookData {
+  [key: string]: unknown
 }
 
 export interface DeliveryStatus {
@@ -53,7 +72,7 @@ export interface DeliveryStatus {
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'bounced'
   timestamp: Date
   errorReason?: string
-  webhookData?: any
+  webhookData?: WebhookData
 }
 
 export interface BulkDeliveryResult {
@@ -80,10 +99,10 @@ class ResendProvider {
   async authenticate(): Promise<boolean> {
     try {
       // Test authentication by making a simple API call
-      const domains = await this.resend.domains.list()
+      await this.resend.domains.list()
       return true
-    } catch (error) {
-      console.error('Resend authentication failed:', error)
+    } catch (_error) {
+      console.error('Resend authentication failed:', _error)
       return false
     }
   }
@@ -98,7 +117,7 @@ class ResendProvider {
         subject: message.subject,
         html: message.htmlContent,
         text: message.textContent,
-        reply_to: message.replyTo,
+        replyTo: message.replyTo,
         attachments: message.attachments?.map(att => ({
           filename: att.filename,
           content: att.content
@@ -112,12 +131,13 @@ class ResendProvider {
         provider: 'resend',
         metadata: result
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       return {
         messageId: crypto.randomUUID(),
         status: 'failed',
         provider: 'resend',
-        error: error.message
+        error: errorMessage
       }
     }
   }
@@ -131,7 +151,7 @@ class ResendProvider {
         status: 'sent', // Assume sent if no error
         timestamp: new Date()
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         messageId,
         status: 'failed',
@@ -208,12 +228,13 @@ class TwilioWhatsAppProvider {
           error: result.message
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       return {
         messageId: crypto.randomUUID(),
         status: 'failed',
         provider: 'twilio-whatsapp',
-        error: error.message
+        error: errorMessage
       }
     }
   }
@@ -245,7 +266,7 @@ class TwilioWhatsAppProvider {
         timestamp: new Date(),
         errorReason: 'Failed to fetch status'
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         messageId,
         status: 'failed',
@@ -290,7 +311,7 @@ export class EncryptionService {
   }
 
   decrypt(encryptedData: string): string {
-    const [ivHex, encrypted] = encryptedData.split(':')
+    const [_ivHex, encrypted] = encryptedData.split(':')
 
     const decipher = crypto.createDecipher(this.algorithm, this.key.toString('hex'))
 
@@ -308,12 +329,23 @@ export class EncryptionService {
   }
 }
 
+interface TemplateData {
+  id?: string
+  name: string
+  type: string
+  channel: string
+  subject?: string
+  htmlContent?: string
+  textContent: string
+  variables: string[]
+}
+
 // Main Communication Engine
 export class CommunicationEngine {
   private emailProvider?: ResendProvider
   private whatsappProvider?: TwilioWhatsAppProvider
   private encryption: EncryptionService
-  private templates: Map<string, any> = new Map()
+  private templates: Map<string, TemplateData> = new Map()
 
   constructor() {
     this.encryption = new EncryptionService(ENCRYPTION_KEY)
@@ -376,8 +408,9 @@ export class CommunicationEngine {
           results.push(result)
           if (result.cost) totalCost += result.cost
           return result
-        } catch (error: any) {
-          failures.push({ message, error: error.message })
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+          failures.push({ message, error: errorMessage })
           return null
         }
       })
@@ -419,7 +452,7 @@ export class CommunicationEngine {
     return this.templates.get(templateId) || null
   }
 
-  async renderTemplate(templateId: string, data: Record<string, any>): Promise<{
+  async renderTemplate(templateId: string, data: Record<string, unknown>): Promise<{
     subject: string
     htmlContent: string
     textContent: string
@@ -440,7 +473,7 @@ export class CommunicationEngine {
   async sendSmartMessage(
     customerId: string,
     messageType: string,
-    data: Record<string, any>,
+    data: Record<string, unknown>,
     preferences: {
       emailOptIn: boolean
       whatsappOptIn: boolean
@@ -556,9 +589,14 @@ export class CommunicationEngine {
     return new Promise(resolve => setTimeout(resolve, ms))
   }
 
-  private interpolateString(template: string, data: Record<string, any>): string {
+  private interpolateString(template: string, data: Record<string, unknown>): string {
     return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
-      const value = path.split('.').reduce((obj: any, key: string) => obj?.[key], data)
+      const value = path.split('.').reduce((obj: unknown, key: string) => {
+        if (obj && typeof obj === 'object' && key in obj) {
+          return (obj as Record<string, unknown>)[key]
+        }
+        return undefined
+      }, data)
       return value !== undefined ? String(value) : match
     })
   }

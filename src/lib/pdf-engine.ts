@@ -43,6 +43,7 @@ export interface InvoicePDFData {
     terms?: string;
     paymentInstructions?: string;
     currency?: string;
+    status?: 'DRAFT' | 'GENERATED' | 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'CANCELLED';
   };
   lineItems: Array<{
     description: string;
@@ -85,6 +86,64 @@ export interface InvoicePDFData {
   };
 }
 
+// Helper: Generate company logo or initials fallback
+const generateLogo = (data: InvoicePDFData): string => {
+  const logoPosition = data.branding?.logoPosition || 'left';
+  const positionStyle = logoPosition === 'left' ? 'order: -1;' : logoPosition === 'right' ? 'order: 1;' : '';
+
+  if (data.company.logo) {
+    return `
+      <div class="logo-container" style="${positionStyle}">
+        <img src="${data.company.logo}" alt="${data.company.name} Logo" />
+      </div>
+    `;
+  }
+
+  // Generate initials from company name
+  const companyName = data.company?.name || 'CS';
+  const initials = companyName
+    .split(' ')
+    .filter(word => word.length > 0)
+    .slice(0, 2)
+    .map(word => word[0].toUpperCase())
+    .join('');
+
+  return `
+    <div class="logo-container" style="${positionStyle}">
+      <div class="logo-initials">${initials}</div>
+    </div>
+  `;
+};
+
+// Helper: Generate watermark based on invoice status
+const generateWatermark = (data: InvoicePDFData): string => {
+  const status = data.invoice.status?.toUpperCase();
+
+  if (status === 'DRAFT') {
+    return '<div class="watermark draft">DRAFT</div>';
+  } else if (status === 'PAID') {
+    return '<div class="watermark paid">PAID</div>';
+  } else if (data.branding?.showWatermark) {
+    return '<div class="watermark original">ORIGINAL</div>';
+  }
+
+  return '';
+};
+
+// Helper: Generate status badge
+const generateStatusBadge = (data: InvoicePDFData): string => {
+  const status = data.invoice.status;
+
+  if (!status || status === 'SENT') {
+    return '';
+  }
+
+  const statusClass = status.toLowerCase().replace('_', '-');
+  const statusText = status.replace('_', ' ');
+
+  return `<div class="status-badge ${statusClass}">${statusText}</div>`;
+};
+
 // Professional HTML Invoice Generator
 const generateHTMLInvoice = (data: InvoicePDFData): string => {
   const primaryColor = data.branding?.primaryColor || '#1f2937';
@@ -125,6 +184,40 @@ const generateHTMLInvoice = (data: InvoicePDFData): string => {
       margin-bottom: ${DESIGN_CONSTANTS.SECTION_SPACING * 1.5}px;
       border-bottom: 3px solid ${primaryColor};
       padding-bottom: 20px;
+      gap: 30px;
+    }
+
+    .logo-container {
+      flex-shrink: 0;
+      max-width: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-container img {
+      max-width: 100%;
+      max-height: 80px;
+      object-fit: contain;
+    }
+
+    .logo-initials {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      letter-spacing: 2px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .company-info {
+      flex: 1;
     }
 
     .company-info h1 {
@@ -350,11 +443,58 @@ const generateHTMLInvoice = (data: InvoicePDFData): string => {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 60px;
-      color: rgba(0,0,0,0.05);
+      font-size: 80px;
       font-weight: bold;
       z-index: 0;
       pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 10px;
+    }
+
+    .watermark.draft {
+      color: rgba(239, 68, 68, 0.08);
+      text-shadow: 0 0 30px rgba(239, 68, 68, 0.1);
+    }
+
+    .watermark.paid {
+      color: rgba(16, 185, 129, 0.08);
+      text-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+    }
+
+    .watermark.original {
+      color: rgba(0, 0, 0, 0.04);
+    }
+
+    .status-badge {
+      position: absolute;
+      top: 100px;
+      right: 40px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .status-badge.draft {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+      border: 2px solid #f59e0b;
+    }
+
+    .status-badge.paid {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+
+    .status-badge.overdue {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      border: 2px solid #ef4444;
     }
 
     .content {
@@ -387,10 +527,12 @@ const generateHTMLInvoice = (data: InvoicePDFData): string => {
 </head>
 <body>
   <div class="container">
-    ${data.branding?.showWatermark ? '<div class="watermark">ORIGINAL</div>' : ''}
+    ${generateWatermark(data)}
+    ${generateStatusBadge(data)}
 
     <div class="content">
       <div class="header">
+        ${generateLogo(data)}
         <div class="company-info">
           <h1>${data.company.name}</h1>
           <p>${data.company.address}</p>
@@ -536,9 +678,50 @@ export class PDFEngine {
 
   async generatePDFBlob(data: InvoicePDFData): Promise<Blob> {
     try {
-      // Generate professional HTML invoice
+      // Only run in browser environment
+      if (typeof window === 'undefined') {
+        throw new Error('PDF generation is only supported in browser environment');
+      }
+
       const htmlContent = generateHTMLInvoice(data);
-      return new Blob([htmlContent], { type: 'text/html' });
+
+      // Dynamically import jsPDF and html2canvas
+      const { default: jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
+      // Create a temporary container
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.width = '210mm'; // A4 width
+      container.innerHTML = htmlContent;
+      document.body.appendChild(container);
+
+      // Convert HTML to canvas
+      const canvas = await html2canvas(container, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+      });
+
+      // Remove temporary container
+      document.body.removeChild(container);
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/png');
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+      // Return as blob
+      return pdf.output('blob');
     } catch (error) {
       console.error('PDF Generation Error:', error);
       throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
