@@ -124,6 +124,13 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
         return words.trim() + ' Rupees Only';
       };
 
+      // DEBUG: Check what we're receiving
+      console.log('🔍 PDF Generation Debug:');
+      console.log('  Invoice ID:', invoice.id);
+      console.log('  Invoice Number:', invoice.number);
+      console.log('  Lines count:', invoice.lines?.length || 0);
+      console.log('  Lines data:', JSON.stringify(invoice.lines, null, 2));
+
       // Transform invoice data to match Pragnya PDF engine format
       const pdfData = {
         company: {
@@ -133,13 +140,14 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
           email: invoice.company?.email || '',
           phone: invoice.company?.phone || '',
           pan: invoice.company?.pan || '',
-          logo: invoice.company?.logo || undefined,
+          logo: invoice.company?.logo || '/images/company-logo.png',
         },
         customer: {
           name: invoice.customer.name,
           address: invoice.customer.address || '',
           city: '', // Extract from address if needed
           pin: '', // Extract from address if needed
+          pan: invoice.customer.pan,
           gstin: invoice.customer.gstin,
         },
         invoice: {
@@ -147,10 +155,20 @@ export default function InvoicePDFViewer({ invoice, onEmailSent }: InvoicePDFVie
           issueDate: invoice.issueDate,
           notes: invoice.notes || undefined,
         },
-        lineItems: invoice.lines.map((line) => ({
+        lineItems: invoice.lines.map((line: any) => ({
           description: line.description,
           amount: line.amount,
-          details: undefined, // Can be enhanced later for nested ROC forms
+          // Custom service columns support - ENHANCED!
+          serviceType: line.serviceType,
+          details: line.serviceData?.rows || undefined,
+          subtotals: line.serviceData ? {
+            govtFees: line.serviceData.totalGovtFees,
+            professionalFees: line.serviceData.totalProfessionalFees,
+            totalFees: line.serviceData.totalFees,
+            totalHours: line.serviceData.totalHours,
+            totalPages: line.serviceData.totalPages,
+            totalDocuments: line.serviceData.totalDocuments,
+          } : undefined,
         })),
         totals: {
           grandTotal: invoice.grandTotal,

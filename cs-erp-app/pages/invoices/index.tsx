@@ -12,7 +12,14 @@ import { AuraLayout } from '@/components/ui/aura-layout';
 import { AuraButton } from '@/components/ui/aura-button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Search, Download, Send, Eye, FolderOpen } from 'lucide-react';
-import { PDFEngine } from '@/lib/pdf-engine';
+import { pragnyaPDFEngine } from '@/lib/pdf-engine-pragnya';
+import { PDFMerger } from '@/lib/pdf-merger';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface InvoiceFilters {
   status?: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED';
@@ -133,84 +140,119 @@ export default function InvoicesPage() {
       const companyResponse = await fetch('/api/trpc/company.getCurrent');
       const companyResult = await companyResponse.json();
       const company = companyResult.result.data || {
-        name: 'Your Company',
+        name: 'PRAGNYA PRADHAN & ASSOCIATES',
         address: '',
-        gstin: '',
         email: '',
-        phone: ''
+        phone: '',
+        pan: ''
       };
 
-      // Transform data for PDF engine
+      // Fetch attachments
+      const attachmentsResponse = await fetch(`/api/trpc/attachment.getByInvoiceId?input=${encodeURIComponent(JSON.stringify({ invoiceId }))}`);
+      const attachmentsResult = await attachmentsResponse.json();
+      const attachments = attachmentsResult.result?.data || [];
+
+      // Helper function to convert number to words
+      const numberToWords = (num: number): string => {
+        if (num === 0) return 'Zero Rupees Only';
+        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const convertTwoDigit = (n: number): string => {
+          if (n < 10) return ones[n];
+          if (n >= 10 && n < 20) return teens[n - 10];
+          return tens[Math.floor(n / 10)] + (n % 10 > 0 ? ' ' + ones[n % 10] : '');
+        };
+        const convertThreeDigit = (n: number): string => {
+          const hundred = Math.floor(n / 100);
+          const remainder = n % 100;
+          let result = hundred > 0 ? ones[hundred] + ' Hundred' : '';
+          if (remainder > 0) result += (result ? ' ' : '') + convertTwoDigit(remainder);
+          return result;
+        };
+        const crore = Math.floor(num / 10000000);
+        const lakh = Math.floor((num % 10000000) / 100000);
+        const thousand = Math.floor((num % 100000) / 1000);
+        const remainder = num % 1000;
+        let words = '';
+        if (crore > 0) words += convertTwoDigit(crore) + ' Crore ';
+        if (lakh > 0) words += convertTwoDigit(lakh) + ' Lakh ';
+        if (thousand > 0) words += convertTwoDigit(thousand) + ' Thousand ';
+        if (remainder > 0) words += convertThreeDigit(remainder);
+        return words.trim() + ' Rupees Only';
+      };
+
+      // Transform data for Pragnya PDF engine
       const pdfData = {
         company: {
-          name: company.name || 'Your Company',
+          name: company.name || 'PRAGNYA PRADHAN & ASSOCIATES',
+          subtitle: 'PRACTICING COMPANY SECRETARIES',
           address: company.address || '',
-          gstin: company.gstin || '',
           email: company.email || '',
           phone: company.phone || '',
-          website: company.website || '',
-          logo: company.logo || undefined,
+          pan: company.pan || '',
+          logo: company.logo || '/images/company-logo.png',
         },
         customer: {
           name: invoice.customer.name,
-          gstin: invoice.customer.gstin,
           address: invoice.customer.address || '',
-          stateCode: invoice.customer.stateCode || '',
-          email: invoice.customer.email,
-          phone: invoice.customer.phone,
+          city: '',
+          pin: '',
+          pan: invoice.customer.pan,
+          gstin: invoice.customer.gstin,
         },
         invoice: {
           number: invoice.number,
           issueDate: new Date(invoice.issueDate),
-          dueDate: invoice.dueDate ? new Date(invoice.dueDate) : undefined,
-          placeOfSupply: invoice.placeOfSupply,
-          status: invoice.status,
-          currency: 'INR',
-          notes: invoice.notes,
-          terms: invoice.terms,
+          notes: invoice.notes || undefined,
         },
         lineItems: invoice.lines.map((line: any) => ({
           description: line.description,
-          quantity: line.quantity,
-          rate: line.rate,
-          taxableValue: line.quantity * line.rate,
-          cgst: (line.quantity * line.rate * line.gstRate) / 200,
-          sgst: (line.quantity * line.rate * line.gstRate) / 200,
-          igst: invoice.igstAmount > 0 ? (line.quantity * line.rate * line.gstRate) / 100 : 0,
-          lineTotal: line.amount,
-          gstRate: line.gstRate,
-          hsnSac: line.hsnSac || '',
+          amount: line.amount,
+          details: undefined,
         })),
         totals: {
-          subtotal: invoice.subtotal,
-          cgstAmount: invoice.cgstAmount,
-          sgstAmount: invoice.sgstAmount,
-          igstAmount: invoice.igstAmount,
-          totalTax: invoice.totalTax,
-          taxableValue: invoice.subtotal,
           grandTotal: invoice.grandTotal,
-          isInterstate: invoice.igstAmount > 0,
+          amountInWords: numberToWords(Math.round(invoice.grandTotal)),
         },
-        branding: {
-          primaryColor: '#1e40af',
-          accentColor: '#3b82f6',
-          logoPosition: 'left' as const,
-          showWatermark: invoice.status === 'SENT',
+        signature: {
+          proprietorName: 'Pragnya Parimita Pradhan',
+          designation: 'Proprietor',
         },
-        paymentDetails: company.bankName ? {
-          bankName: company.bankName,
-          accountNumber: company.accountNumber || '',
-          ifscCode: company.ifscCode || '',
-          upiId: company.upiId || '',
-        } : undefined,
       };
 
-      // Generate PDF
-      const pdfEngine = PDFEngine.getInstance();
-      const pdfBlob = await pdfEngine.generatePDFBlob(pdfData);
+      // Generate invoice PDF using Pragnya engine
+      const invoicePdfBlob = await pragnyaPDFEngine.generatePDFBlob(pdfData);
+
+      // Merge with attachments if any
+      let finalPdfBlob = invoicePdfBlob;
+      if (attachments.length > 0) {
+        console.log(`🔗 Merging ${attachments.length} attachments with invoice PDF`);
+        const attachmentBlobs: Blob[] = [];
+        for (const attachment of attachments) {
+          try {
+            const { data, error } = await supabase.storage
+              .from('invoice-attachments')
+              .download(attachment.storagePath);
+            if (!error && data) {
+              attachmentBlobs.push(data);
+              console.log(`✅ Downloaded attachment: ${attachment.fileName}`);
+            }
+          } catch (err) {
+            console.error(`❌ Error downloading ${attachment.fileName}:`, err);
+          }
+        }
+        if (attachmentBlobs.length > 0) {
+          finalPdfBlob = await PDFMerger.mergePDFs([
+            { type: 'blob', data: invoicePdfBlob },
+            ...attachmentBlobs.map(blob => ({ type: 'blob' as const, data: blob })),
+          ]);
+          console.log(`✅ Successfully merged invoice with ${attachmentBlobs.length} attachments`);
+        }
+      }
 
       // Trigger download
-      const url = URL.createObjectURL(pdfBlob);
+      const url = URL.createObjectURL(finalPdfBlob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `Invoice-${invoiceNumber}.pdf`;

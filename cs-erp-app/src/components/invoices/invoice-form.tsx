@@ -15,7 +15,9 @@ import { AuraButton } from '../ui/aura-button';
 import { AuraInput } from '../ui/aura-input';
 import { AuraSelect } from '../ui/aura-select';
 import { formatCurrency } from '../../lib/utils';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Plus, Trash2, Calculator, Sparkles } from 'lucide-react';
+import { DynamicLineItemBuilder } from './DynamicLineItemBuilder';
+import { ServiceType } from '@/types/service-types';
 
 // Form validation schema
 const invoiceFormSchema = z.object({
@@ -34,6 +36,9 @@ const invoiceFormSchema = z.object({
     hsnSac: z.string().optional(),
     serviceTemplateId: z.string().optional(),
     customFieldData: z.record(z.any()).optional(),
+    // Custom service columns support
+    serviceType: z.string().optional(),
+    serviceData: z.any().optional(), // JSON data for service-specific columns
   })).min(1, 'At least one line item is required'),
 });
 
@@ -82,6 +87,7 @@ function InvoiceForm({ invoiceId, initialCustomerId, onSuccess, onCancel }: Invo
     hsnSac: '',
     saveAsTemplate: false,
   });
+  const [showAdvancedBuilder, setShowAdvancedBuilder] = useState(false);
 
   // Form setup
   const form = useForm<InvoiceFormData>({
@@ -305,6 +311,31 @@ function InvoiceForm({ invoiceId, initialCustomerId, onSuccess, onCancel }: Invo
     // Close dialog
     setShowCustomServiceDialog(false);
     setCurrentLineIndex(null);
+  };
+
+  const handleAdvancedLineItemAdd = (lineItem: {
+    description: string;
+    quantity: number;
+    rate: number;
+    amount: number;
+    gstRate: number;
+    serviceType: ServiceType;
+    serviceData?: any;
+  }) => {
+    // Add the line item with service type and data
+    append({
+      description: lineItem.description,
+      quantity: lineItem.quantity,
+      rate: lineItem.rate,
+      isReimbursement: false,
+      gstRate: lineItem.gstRate,
+      hsnSac: '',
+      serviceType: lineItem.serviceType,
+      serviceData: lineItem.serviceData,
+    });
+
+    // Close the advanced builder
+    setShowAdvancedBuilder(false);
   };
 
   return (
@@ -533,15 +564,35 @@ function InvoiceForm({ invoiceId, initialCustomerId, onSuccess, onCancel }: Invo
               </div>
             ))}
 
-            {/* Add Line Item Button */}
-            <button
-              type="button"
-              onClick={addLineItem}
-              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 font-medium"
-            >
-              <Plus className="h-5 w-5" />
-              Add Line Item
-            </button>
+            {/* Advanced Line Item Builder */}
+            {showAdvancedBuilder ? (
+              <DynamicLineItemBuilder
+                onAddLineItem={handleAdvancedLineItemAdd}
+                onCancel={() => setShowAdvancedBuilder(false)}
+              />
+            ) : (
+              <div className="space-y-3">
+                {/* Quick Add Button */}
+                <button
+                  type="button"
+                  onClick={addLineItem}
+                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 font-medium"
+                >
+                  <Plus className="h-5 w-5" />
+                  Add Simple Line Item
+                </button>
+
+                {/* Advanced Builder Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedBuilder(true)}
+                  className="w-full border-2 border-dashed border-blue-300 rounded-lg p-4 text-blue-600 hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 font-medium bg-blue-50/50"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Add Service with Custom Columns (ROC, Audit, etc.)
+                </button>
+              </div>
+            )}
           </div>
         </AuraCardContent>
       </AuraCard>

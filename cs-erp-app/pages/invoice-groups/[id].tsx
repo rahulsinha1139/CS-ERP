@@ -96,7 +96,7 @@ export default function InvoiceGroupDetailPage() {
             currency: 'INR',
             status: invoice.status,
           },
-          lineItems: invoice.lines.map((line) => {
+          lineItems: invoice.lines.map((line: any) => {
             const taxableValue = line.amount;
             const isInterstate = invoice.igstAmount > 0;
             const cgst = isInterstate ? 0 : (taxableValue * line.gstRate) / 200;
@@ -115,6 +115,17 @@ export default function InvoiceGroupDetailPage() {
               lineTotal,
               gstRate: line.gstRate,
               hsnSac: line.hsnSac || undefined,
+              // Custom service columns support
+              serviceType: line.serviceType,
+              details: line.serviceData?.rows || undefined,
+              subtotals: line.serviceData ? {
+                govtFees: line.serviceData.totalGovtFees,
+                professionalFees: line.serviceData.totalProfessionalFees,
+                totalFees: line.serviceData.totalFees,
+                totalHours: line.serviceData.totalHours,
+                totalPages: line.serviceData.totalPages,
+                totalDocuments: line.serviceData.totalDocuments,
+              } : undefined,
             };
           }),
           totals: {

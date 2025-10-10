@@ -46,6 +46,9 @@ const createInvoiceSchema = z.object({
     serviceTemplateId: z.string().optional(),
     isReimbursement: z.boolean().default(false),
     customFieldData: z.record(z.any()).optional(),
+    // Custom service columns support
+    serviceType: z.string().optional(),
+    serviceData: z.any().optional(),
   })),
   placeOfSupply: z.string().optional(),
   notes: z.string().optional(),
@@ -66,6 +69,9 @@ const updateInvoiceSchema = z.object({
     serviceTemplateId: z.string().optional(),
     isReimbursement: z.boolean().default(false),
     customFieldData: z.record(z.any()).optional(),
+    // Custom service columns support
+    serviceType: z.string().optional(),
+    serviceData: z.any().optional(),
   })).optional(),
   placeOfSupply: z.string().optional(),
   notes: z.string().optional(),
@@ -319,6 +325,9 @@ export const invoiceRouter = createTRPCRouter({
               isReimbursement: line.isReimbursement,
               ...(line.serviceTemplateId && line.serviceTemplateId.trim() !== '' ? { serviceTemplateId: line.serviceTemplateId } : {}),
               ...(line.customFieldData ? { customFieldData: line.customFieldData as any } : {}),
+              // Custom service columns support
+              ...(line.serviceType ? { serviceType: line.serviceType } : {}),
+              ...(line.serviceData ? { serviceData: line.serviceData as any } : {}),
             })),
           },
         },
@@ -411,6 +420,9 @@ export const invoiceRouter = createTRPCRouter({
             ...(line.hsnSac && line.hsnSac.trim() !== '' ? { hsnSac: line.hsnSac } : {}),
             isReimbursement: line.isReimbursement,
             ...(line.serviceTemplateId && line.serviceTemplateId.trim() !== '' ? { serviceTemplateId: line.serviceTemplateId } : {}),
+            // Custom service columns support
+            ...(line.serviceType ? { serviceType: line.serviceType } : {}),
+            ...(line.serviceData ? { serviceData: line.serviceData as any } : {}),
           }))
         };
 
@@ -433,6 +445,9 @@ export const invoiceRouter = createTRPCRouter({
               hsnSac: line.hsnSac,
               isReimbursement: line.isReimbursement,
               serviceTemplateId: line.serviceTemplateId,
+              // Custom service columns support
+              ...(line.serviceType ? { serviceType: line.serviceType } : {}),
+              ...(line.serviceData ? { serviceData: line.serviceData as any } : {}),
             }))
           }
         } : finalUpdateData,

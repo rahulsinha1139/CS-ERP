@@ -7,6 +7,225 @@
 
 import { formatCurrency, formatDate } from './utils';
 
+// Helper function to render service-specific details table
+const renderServiceDetailsTable = (item: any): string => {
+  if (!item.details || item.details.length === 0) return '';
+
+  const serviceType = item.serviceType || 'GENERAL';
+  const firstDetail = item.details[0];
+
+  // Determine which service type based on fields present
+  switch (serviceType) {
+    case 'ROC_FILING':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>ROC Forms</th>
+              ${firstDetail.srn !== undefined ? '<th>SRN</th>' : ''}
+              ${firstDetail.filingDate !== undefined ? '<th>Filing Date</th>' : ''}
+              ${firstDetail.govtFees !== undefined ? '<th>Govt Fees</th>' : ''}
+              <th>Prof. Fees</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                <td>${detail.formName || '-'}</td>
+                ${firstDetail.srn !== undefined ? `<td>${detail.srn || '-'}</td>` : ''}
+                ${firstDetail.filingDate !== undefined ? `<td>${detail.filingDate || '-'}</td>` : ''}
+                ${firstDetail.govtFees !== undefined ? `<td>${formatCurrency(detail.govtFees || 0)}</td>` : ''}
+                <td>${formatCurrency(detail.professionalFees || detail.amount)}</td>
+              </tr>
+            `).join('')}
+            ${item.subtotals ? `
+              <tr style="font-weight: 600; background-color: #f5f5f5;">
+                <td>${firstDetail.srn !== undefined && firstDetail.filingDate !== undefined ? 'Total' : 'TOTAL'}</td>
+                ${firstDetail.srn !== undefined ? '<td></td>' : ''}
+                ${firstDetail.filingDate !== undefined ? '<td></td>' : ''}
+                ${firstDetail.govtFees !== undefined ? `<td>${formatCurrency(item.subtotals.govtFees || 0)}</td>` : ''}
+                <td>${formatCurrency(item.subtotals.professionalFees || 0)}</td>
+              </tr>
+            ` : ''}
+          </tbody>
+        </table>`;
+
+    case 'SECRETARIAL_AUDIT':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Audit Type</th>
+              <th>Deliverables</th>
+              ${firstDetail.hours !== undefined ? '<th>Hours</th>' : ''}
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                <td>${detail.period || '-'}</td>
+                <td>${detail.auditType || '-'}</td>
+                <td>${detail.deliverables || '-'}</td>
+                ${firstDetail.hours !== undefined ? `<td>${detail.hours || '-'}</td>` : ''}
+                <td>${formatCurrency(detail.fee || detail.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+    case 'BOARD_MEETING':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>Meeting Type</th>
+              <th>Date</th>
+              <th>Notice</th>
+              <th>Minutes</th>
+              ${firstDetail.formsField ? '<th>Forms Filed</th>' : ''}
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                <td>${detail.meetingType || '-'}</td>
+                <td>${detail.meetingDate || '-'}</td>
+                <td>${detail.noticePrep ? 'Yes' : 'No'}</td>
+                <td>${detail.minutesDraft ? 'Yes' : 'No'}</td>
+                ${firstDetail.formsField ? `<td>${detail.formsField || '-'}</td>` : ''}
+                <td>${formatCurrency(detail.fee || detail.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+    case 'TRADEMARK_IP':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              ${firstDetail.applicationNumber !== undefined ? '<th>App. No.</th>' : ''}
+              ${firstDetail.class !== undefined ? '<th>Class</th>' : ''}
+              <th>Description</th>
+              ${firstDetail.govtFees !== undefined ? '<th>Govt Fees</th>' : ''}
+              <th>Prof. Fees</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                ${firstDetail.applicationNumber !== undefined ? `<td>${detail.applicationNumber || '-'}</td>` : ''}
+                ${firstDetail.class !== undefined ? `<td>${detail.class || '-'}</td>` : ''}
+                <td>${detail.ipDescription || detail.description || '-'}</td>
+                ${firstDetail.govtFees !== undefined ? `<td>${formatCurrency(detail.govtFees || 0)}</td>` : ''}
+                <td>${formatCurrency(detail.professionalFees || detail.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+    case 'LEGAL_DRAFTING':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>Document Type</th>
+              ${firstDetail.pages !== undefined ? '<th>Pages</th>' : ''}
+              <th>Revisions</th>
+              ${firstDetail.deliveryDate !== undefined ? '<th>Delivery Date</th>' : ''}
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                <td>${detail.documentType || '-'}</td>
+                ${firstDetail.pages !== undefined ? `<td>${detail.pages || '-'}</td>` : ''}
+                <td>${detail.revisions || 0}</td>
+                ${firstDetail.deliveryDate !== undefined ? `<td>${detail.deliveryDate || '-'}</td>` : ''}
+                <td>${formatCurrency(detail.fee || detail.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+    case 'RETAINER':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Hours</th>
+              <th>Rate/Hour</th>
+              <th>Services Included</th>
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                <td>${detail.period || '-'}</td>
+                <td>${detail.hours || '-'}</td>
+                <td>${formatCurrency(detail.ratePerHour || 0)}</td>
+                <td>${detail.servicesIncluded || '-'}</td>
+                <td>${formatCurrency(detail.fee || detail.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+    case 'DUE_DILIGENCE':
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              <th>Scope</th>
+              <th>Documents</th>
+              <th>Report Type</th>
+              <th>Timeline</th>
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                <td>${detail.scope || '-'}</td>
+                <td>${detail.documentsReviewed || 0}</td>
+                <td>${detail.reportType || '-'}</td>
+                <td>${detail.timeline || '-'}</td>
+                <td>${formatCurrency(detail.fee || detail.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+    default:
+      // Fallback to original ROC format for backward compatibility
+      return `
+        <table class="details-table">
+          <thead>
+            <tr>
+              ${firstDetail.formName !== undefined ? '<th>ROC Forms</th>' : '<th>Item</th>'}
+              ${firstDetail.srn !== undefined ? '<th>SRN</th>' : ''}
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${item.details.map((detail: any) => `
+              <tr>
+                ${firstDetail.formName !== undefined ? `<td>${detail.formName}</td>` : '<td>-</td>'}
+                ${firstDetail.srn !== undefined ? `<td>${detail.srn || '-'}</td>` : ''}
+                <td>${formatCurrency(detail.amount || 0)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+  }
+};
+
 export interface PragnyaInvoicePDFData {
   company: {
     name: string;
@@ -22,6 +241,7 @@ export interface PragnyaInvoicePDFData {
     address: string;
     city?: string;
     pin?: string;
+    pan?: string;
     gstin?: string;
   };
   invoice: {
@@ -31,11 +251,61 @@ export interface PragnyaInvoicePDFData {
   };
   lineItems: Array<{
     description: string;
+    serviceType?: string; // 'ROC_FILING', 'SECRETARIAL_AUDIT', etc.
     details?: Array<{
+      // ROC Filing fields
       formName?: string;
       srn?: string;
+      filingDate?: string;
+      govtFees?: number;
+      professionalFees?: number;
+
+      // Secretarial Audit fields
+      period?: string;
+      auditType?: string;
+      deliverables?: string;
+      hours?: number;
+
+      // Board/AGM Meeting fields
+      meetingType?: string;
+      meetingDate?: string;
+      noticePrep?: boolean;
+      minutesDraft?: boolean;
+      formsField?: string;
+
+      // Trademark/IP fields
+      applicationNumber?: string;
+      class?: string;
+      ipDescription?: string;
+
+      // Legal Drafting fields
+      documentType?: string;
+      pages?: number;
+      revisions?: number;
+      deliveryDate?: string;
+
+      // Retainer fields
+      ratePerHour?: number;
+      servicesIncluded?: string;
+
+      // Due Diligence fields
+      scope?: string;
+      documentsReviewed?: number;
+      reportType?: string;
+      timeline?: string;
+
+      // Common
+      fee?: number;
       amount: number;
     }>;
+    subtotals?: {
+      govtFees?: number;
+      professionalFees?: number;
+      totalFees?: number;
+      totalHours?: number;
+      totalPages?: number;
+      totalDocuments?: number;
+    };
     amount: number;
   }>;
   totals: {
@@ -68,12 +338,13 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
       line-height: 1.5;
       color: #000;
       background: white;
-      padding: 20mm;
+      padding: 15mm 20mm;
     }
 
     .container {
       max-width: 800px;
       margin: 0 auto;
+      padding: 0 10mm;
     }
 
     /* Header with Logo and Company Info */
@@ -81,18 +352,21 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
       display: flex;
       align-items: flex-start;
       gap: 20px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
 
     .logo {
       flex-shrink: 0;
-      width: 80px;
-      height: 80px;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .logo img {
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
     }
 
@@ -101,22 +375,25 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     }
 
     .company-name {
-      font-size: 20pt;
+      font-size: 22pt;
       font-weight: 700;
-      color: #003087;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
+      color: #1a4d8f;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
     }
 
     .company-subtitle {
-      font-size: 11pt;
-      font-weight: 500;
-      color: #003087;
-      margin-bottom: 8px;
+      font-size: 12pt;
+      font-weight: 600;
+      color: #1a4d8f;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .header-line {
-      border-bottom: 3px solid #8B0000;
+      border-bottom: 4px solid #8B0000;
       margin-bottom: 15px;
     }
 
@@ -226,26 +503,45 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     .signature-section {
       margin-top: 50px;
       page-break-inside: avoid;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .signature-label {
       font-weight: 600;
-      margin-bottom: 60px;
+      margin-bottom: 10px;
+      font-size: 11pt;
     }
 
     .signature-box {
-      margin-top: 80px;
+      margin-top: 70px;
       text-align: left;
+    }
+
+    .signature-image {
+      max-width: 150px;
+      max-height: 60px;
+      margin-bottom: 5px;
+      object-fit: contain;
+    }
+
+    .signature-line {
+      border-bottom: 1px solid #333;
+      width: 200px;
+      margin-bottom: 5px;
     }
 
     .signature-name {
       font-weight: 600;
       margin-bottom: 2px;
+      font-size: 11pt;
     }
 
     .signature-designation {
       font-size: 10pt;
       margin-bottom: 2px;
+      font-style: italic;
     }
 
     .signature-pan {
@@ -255,12 +551,13 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
 
     /* Footer */
     .footer {
-      margin-top: 40px;
+      margin-top: 60px;
       padding-top: 15px;
-      border-top: 3px solid #8B0000;
+      border-top: 4px solid #8B0000;
       text-align: center;
       font-size: 10pt;
       color: #333;
+      page-break-inside: avoid;
     }
 
     @media print {
@@ -274,7 +571,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
 
       @page {
         size: A4;
-        margin: 15mm;
+        margin: 20mm 15mm;
       }
     }
   </style>
@@ -285,7 +582,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     <div class="header">
       ${data.company.logo ? `
         <div class="logo">
-          <img src="${data.company.logo}" alt="${data.company.name} Logo" />
+          <img src="${data.company.logo}" alt="${data.company.name} Logo" crossorigin="anonymous" />
         </div>
       ` : ''}
       <div class="company-header">
@@ -299,7 +596,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     <!-- Company Contact Info -->
     <div class="company-contact">
       ${data.company.address}<br>
-      Mob: ${data.company.phone || ''}${data.company.email ? ` Email id: ${data.company.email}` : ''}
+      ${data.company.phone ? `Mob: ${data.company.phone}` : ''}${data.company.email ? ` Email id: ${data.company.email}` : ''}
     </div>
 
     <!-- Invoice Number and Date -->
@@ -313,7 +610,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
       <strong>${data.customer.name}</strong><br>
       ${data.customer.address}${data.customer.city ? `, ${data.customer.city}` : ''}<br>
       ${data.customer.pin ? `PIN-${data.customer.pin}` : ''}<br>
-      ${data.customer.gstin ? `GST NO: ${data.customer.gstin}` : ''}
+      ${data.customer.pan ? `PAN: ${data.customer.pan}` : ''}${data.customer.pan && data.customer.gstin ? ' | ' : ''}${data.customer.gstin ? `GST NO: ${data.customer.gstin}` : ''}
     </div>
 
     <!-- Invoice Table -->
@@ -331,26 +628,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
             <td style="text-align: center;">${index + 1}.</td>
             <td>
               ${item.description}
-              ${item.details && item.details.length > 0 ? `
-                <table class="details-table">
-                  <thead>
-                    <tr>
-                      ${item.details[0].formName !== undefined ? '<th>ROC Forms</th>' : '<th>Item</th>'}
-                      ${item.details[0].srn !== undefined ? '<th>SRN</th>' : ''}
-                      <th>${item.details[0].formName !== undefined ? 'Professional Fees' : 'Amount'}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${item.details.map(detail => `
-                      <tr>
-                        ${detail.formName !== undefined ? `<td>${detail.formName}</td>` : '<td>-</td>'}
-                        ${detail.srn !== undefined ? `<td>${detail.srn}</td>` : ''}
-                        <td>${detail.amount.toFixed(0)}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              ` : ''}
+              ${renderServiceDetailsTable(item)}
             </td>
             <td class="number">${formatCurrency(item.amount)}</td>
           </tr>
@@ -377,7 +655,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
       <div class="signature-label">For ${data.company.name}</div>
 
       <div class="signature-box">
-        <div style="border-bottom: 1px solid #000; width: 200px; margin-bottom: 5px;"></div>
+        <div class="signature-line"></div>
         <div class="signature-name">(${data.signature?.proprietorName || 'Pragnya Parimita Pradhan'})</div>
         <div class="signature-designation">${data.signature?.designation || 'Proprietor'}</div>
         ${data.company.pan ? `<div class="signature-pan">PAN: ${data.company.pan}</div>` : ''}
@@ -387,7 +665,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     <!-- Footer -->
     <div class="footer">
       ${data.company.address}<br>
-      Mob: ${data.company.phone || ''}${data.company.email ? ` Email id: ${data.company.email}` : ''}
+      ${data.company.phone ? `Mob: ${data.company.phone}` : ''}${data.company.email ? ` Email id: ${data.company.email}` : ''}
     </div>
   </div>
 </body>
@@ -418,6 +696,7 @@ export class PragnyaPDFEngine {
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
+        windowHeight: container.scrollHeight,
       });
 
       document.body.removeChild(container);
@@ -428,11 +707,26 @@ export class PragnyaPDFEngine {
         format: 'a4',
       });
 
-      const imgWidth = 210;
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       const imgData = canvas.toDataURL('image/png');
 
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      // Calculate how many pages we need
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if content exceeds one page
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
 
       return pdf.output('blob');
     } catch (error) {
