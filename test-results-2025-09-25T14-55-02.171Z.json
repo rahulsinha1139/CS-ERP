@@ -1,0 +1,128 @@
+{
+  "timestamp": "2025-09-25T14:55:02.173Z",
+  "summary": {
+    "totalTests": 13,
+    "passedTests": 6,
+    "failedTests": 6,
+    "successRate": 50,
+    "failures": [
+      {
+        "test": "API - Compliance Router",
+        "message": "\nInvalid `prisma.complianceTemplate.create()` invocation:\n\n\nForeign key constraint violated: `compliance_templates_companyId_fkey (index)`"
+      },
+      {
+        "test": "Page Load - /invoices",
+        "message": "Cannot read properties of undefined (reading 'content-length')"
+      },
+      {
+        "test": "Page Load - /invoices/new",
+        "message": "Cannot read properties of undefined (reading 'content-length')"
+      },
+      {
+        "test": "Page Load - /payments/new",
+        "message": "Cannot read properties of undefined (reading 'content-length')"
+      },
+      {
+        "test": "Page Load - /customers",
+        "message": "Cannot read properties of undefined (reading 'content-length')"
+      },
+      {
+        "test": "Page Load - /compliance",
+        "message": "Cannot read properties of undefined (reading 'content-length')"
+      }
+    ]
+  },
+  "totalTestTime": "25140ms",
+  "results": [
+    {
+      "test": "API Test Suite",
+      "status": "PASS",
+      "message": "10/11 tests passed (90.9%)",
+      "responseTime": "1905ms",
+      "data": {
+        "total": 11,
+        "passed": 10,
+        "failed": 1
+      }
+    },
+    {
+      "test": "API - Compliance Router",
+      "status": "FAIL",
+      "message": "\nInvalid `prisma.complianceTemplate.create()` invocation:\n\n\nForeign key constraint violated: `compliance_templates_companyId_fkey (index)`",
+      "responseTime": null
+    },
+    {
+      "test": "Page Load - /invoices",
+      "status": "FAIL",
+      "message": "Cannot read properties of undefined (reading 'content-length')",
+      "responseTime": null
+    },
+    {
+      "test": "Page Load - /invoices/new",
+      "status": "FAIL",
+      "message": "Cannot read properties of undefined (reading 'content-length')",
+      "responseTime": null
+    },
+    {
+      "test": "Page Load - /payments/new",
+      "status": "FAIL",
+      "message": "Cannot read properties of undefined (reading 'content-length')",
+      "responseTime": null
+    },
+    {
+      "test": "Page Load - /customers",
+      "status": "FAIL",
+      "message": "Cannot read properties of undefined (reading 'content-length')",
+      "responseTime": null
+    },
+    {
+      "test": "Page Load - /compliance",
+      "status": "FAIL",
+      "message": "Cannot read properties of undefined (reading 'content-length')",
+      "responseTime": null
+    },
+    {
+      "test": "Page Load - dashboard",
+      "status": "INFO",
+      "message": "Page not implemented yet",
+      "responseTime": null
+    },
+    {
+      "test": "DB Query - Customer Query",
+      "status": "PASS",
+      "message": "Query executed successfully",
+      "responseTime": "871ms"
+    },
+    {
+      "test": "DB Query - Invoice Stats Query",
+      "status": "PASS",
+      "message": "Query executed successfully",
+      "responseTime": "123ms"
+    },
+    {
+      "test": "DB Query - Payment Query",
+      "status": "PASS",
+      "message": "Query executed successfully",
+      "responseTime": "41ms"
+    },
+    {
+      "test": "DB Query - Service Query",
+      "status": "PASS",
+      "message": "Query executed successfully",
+      "responseTime": "24ms"
+    },
+    {
+      "test": "Performance Analysis",
+      "status": "PASS",
+      "message": "Average: 593ms, Grade: B",
+      "responseTime": null,
+      "data": {
+        "average": "593ms",
+        "min": "24ms",
+        "max": "1905ms",
+        "grade": "B",
+        "totalTests": 5
+      }
+    }
+  ]
+}

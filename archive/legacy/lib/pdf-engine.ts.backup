@@ -1,0 +1,518 @@
+/**
+ * PDF Generation Engine for Professional Invoices
+ * Optimized for Indian Company Secretary practice
+ * Uses React-PDF with mathematical precision
+ */
+
+// Temporary feature flag for build testing
+const PDF_ENABLED = false;
+
+import { formatCurrency, formatDate } from './utils';
+
+// Mathematical constants for optimal layout (Golden ratio based)
+const PDF_CONSTANTS = {
+  GOLDEN_RATIO: 1.618,
+  PAGE_MARGIN: 40,
+  SECTION_SPACING: 16,
+  LINE_HEIGHT: 1.4,
+  FONT_SIZES: {
+    TITLE: 18,
+    SUBTITLE: 14,
+    BODY: 10,
+    SMALL: 8,
+  },
+} as const;
+
+// PDF Styles using mathematical proportions
+/* const pdfStyles = StyleSheet.create({
+  page: {
+    fontFamily: 'Helvetica',
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+    paddingTop: PDF_CONSTANTS.PAGE_MARGIN,
+    paddingLeft: PDF_CONSTANTS.PAGE_MARGIN,
+    paddingRight: PDF_CONSTANTS.PAGE_MARGIN,
+    paddingBottom: PDF_CONSTANTS.PAGE_MARGIN,
+    lineHeight: PDF_CONSTANTS.LINE_HEIGHT,
+  },
+  header: {
+    marginBottom: PDF_CONSTANTS.SECTION_SPACING * 2,
+    borderBottom: 1,
+    borderBottomColor: '#000000',
+    paddingBottom: PDF_CONSTANTS.SECTION_SPACING,
+  },
+  companyName: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.TITLE,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  companyDetails: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+    color: '#666666',
+    marginBottom: 2,
+  },
+  invoiceTitle: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.SUBTITLE,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: PDF_CONSTANTS.SECTION_SPACING,
+    textTransform: 'uppercase',
+  },
+  section: {
+    marginBottom: PDF_CONSTANTS.SECTION_SPACING,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  column: {
+    flexDirection: 'column',
+    flex: 1,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  value: {
+    marginBottom: 4,
+  },
+  table: {
+    marginTop: PDF_CONSTANTS.SECTION_SPACING,
+    marginBottom: PDF_CONSTANTS.SECTION_SPACING,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    borderBottomStyle: 'solid',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#cccccc',
+    borderBottomStyle: 'solid',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    minHeight: 24,
+  },
+  tableCell: {
+    flex: 1,
+    textAlign: 'left',
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+  },
+  tableCellRight: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+  },
+  tableCellCenter: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+  },
+  totalsSection: {
+    marginTop: PDF_CONSTANTS.SECTION_SPACING,
+    borderTopWidth: 1,
+    borderTopColor: '#000000',
+    borderTopStyle: 'solid',
+    paddingTop: PDF_CONSTANTS.SECTION_SPACING,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  totalLabel: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+    fontWeight: 'bold',
+  },
+  totalValue: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+    fontWeight: 'bold',
+  },
+  grandTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#000000',
+    borderTopStyle: 'solid',
+    paddingTop: 6,
+    marginTop: 6,
+  },
+  grandTotalLabel: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.SUBTITLE,
+    fontWeight: 'bold',
+  },
+  grandTotalValue: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.SUBTITLE,
+    fontWeight: 'bold',
+  },
+  footer: {
+    marginTop: PDF_CONSTANTS.SECTION_SPACING * 2,
+    paddingTop: PDF_CONSTANTS.SECTION_SPACING,
+    borderTopWidth: 0.5,
+    borderTopColor: '#cccccc',
+    borderTopStyle: 'solid',
+    fontSize: PDF_CONSTANTS.FONT_SIZES.SMALL,
+    color: '#666666',
+  },
+  termsSection: {
+    marginTop: PDF_CONSTANTS.SECTION_SPACING,
+    padding: 8,
+    backgroundColor: '#f9f9f9',
+    border: 1,
+    borderColor: '#e0e0e0',
+  },
+  termsTitle: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.BODY,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  termsText: {
+    fontSize: PDF_CONSTANTS.FONT_SIZES.SMALL,
+    lineHeight: 1.3,
+  },
+}); */
+
+export interface InvoicePDFData {
+  // Company Information
+  company: {
+    name: string;
+    gstin?: string;
+    address: string;
+    email?: string;
+    phone?: string;
+  };
+
+  // Customer Information
+  customer: {
+    name: string;
+    gstin?: string;
+    address: string;
+    stateCode?: string;
+  };
+
+  // Invoice Details
+  invoice: {
+    number: string;
+    issueDate: Date;
+    dueDate?: Date;
+    placeOfSupply?: string;
+    notes?: string;
+    terms?: string;
+  };
+
+  // Line Items
+  lineItems: Array<{
+    description: string;
+    quantity: number;
+    rate: number;
+    taxableValue: number;
+    cgst: number;
+    sgst: number;
+    igst: number;
+    lineTotal: number;
+    gstRate: number;
+    hsnSac?: string;
+  }>;
+
+  // Totals
+  totals: {
+    subtotal: number;
+    taxableValue: number;
+    cgstAmount: number;
+    sgstAmount: number;
+    igstAmount: number;
+    totalTax: number;
+    grandTotal: number;
+    isInterstate: boolean;
+  };
+}
+
+/**
+ * Professional Invoice PDF Component
+ */
+/* const InvoicePDF: React.FC<{ data: InvoicePDFData }> = ({ data }) => (
+  <Document>
+    <Page size="A4" style={pdfStyles.page}>
+      {/* Header Section */}
+      <View style={pdfStyles.header}>
+        <View style={pdfStyles.row}>
+          <View style={pdfStyles.column}>
+            <Text style={pdfStyles.companyName}>{data.company.name}</Text>
+            <Text style={pdfStyles.companyDetails}>{data.company.address}</Text>
+            {data.company.gstin && (
+              <Text style={pdfStyles.companyDetails}>GSTIN: {data.company.gstin}</Text>
+            )}
+            {data.company.email && (
+              <Text style={pdfStyles.companyDetails}>Email: {data.company.email}</Text>
+            )}
+            {data.company.phone && (
+              <Text style={pdfStyles.companyDetails}>Phone: {data.company.phone}</Text>
+            )}
+          </View>
+        </View>
+      </View>
+
+      {/* Invoice Title */}
+      <Text style={pdfStyles.invoiceTitle}>Tax Invoice</Text>
+
+      {/* Invoice & Customer Details */}
+      <View style={pdfStyles.section}>
+        <View style={pdfStyles.row}>
+          <View style={pdfStyles.column}>
+            <Text style={pdfStyles.label}>Bill To:</Text>
+            <Text style={pdfStyles.value}>{data.customer.name}</Text>
+            <Text style={pdfStyles.value}>{data.customer.address}</Text>
+            {data.customer.gstin && (
+              <Text style={pdfStyles.value}>GSTIN: {data.customer.gstin}</Text>
+            )}
+            {data.customer.stateCode && (
+              <Text style={pdfStyles.value}>State Code: {data.customer.stateCode}</Text>
+            )}
+          </View>
+          <View style={pdfStyles.column}>
+            <Text style={pdfStyles.label}>Invoice Details:</Text>
+            <Text style={pdfStyles.value}>Invoice No: {data.invoice.number}</Text>
+            <Text style={pdfStyles.value}>Issue Date: {formatDate(data.invoice.issueDate)}</Text>
+            {data.invoice.dueDate && (
+              <Text style={pdfStyles.value}>Due Date: {formatDate(data.invoice.dueDate)}</Text>
+            )}
+            {data.invoice.placeOfSupply && (
+              <Text style={pdfStyles.value}>Place of Supply: {data.invoice.placeOfSupply}</Text>
+            )}
+          </View>
+        </View>
+      </View>
+
+      {/* Line Items Table */}
+      <View style={pdfStyles.table}>
+        {/* Table Header */}
+        <View style={pdfStyles.tableHeader}>
+          <Text style={[pdfStyles.tableCell, { flex: 3 }]}>Description</Text>
+          <Text style={[pdfStyles.tableCellCenter, { flex: 1 }]}>Qty</Text>
+          <Text style={[pdfStyles.tableCellRight, { flex: 1.5 }]}>Rate</Text>
+          <Text style={[pdfStyles.tableCellRight, { flex: 1.5 }]}>Taxable</Text>
+          {!data.totals.isInterstate ? (
+            <>
+              <Text style={[pdfStyles.tableCellRight, { flex: 1 }]}>CGST</Text>
+              <Text style={[pdfStyles.tableCellRight, { flex: 1 }]}>SGST</Text>
+            </>
+          ) : (
+            <Text style={[pdfStyles.tableCellRight, { flex: 1 }]}>IGST</Text>
+          )}
+          <Text style={[pdfStyles.tableCellRight, { flex: 1.5 }]}>Total</Text>
+        </View>
+
+        {/* Table Rows */}
+        {data.lineItems.map((item, index) => (
+          <View key={index} style={pdfStyles.tableRow}>
+            <View style={[pdfStyles.tableCell, { flex: 3 }]}>
+              <Text>{item.description}</Text>
+              {item.hsnSac && (
+                <Text style={{ fontSize: 8, color: '#666' }}>HSN/SAC: {item.hsnSac}</Text>
+              )}
+            </View>
+            <Text style={[pdfStyles.tableCellCenter, { flex: 1 }]}>{item.quantity}</Text>
+            <Text style={[pdfStyles.tableCellRight, { flex: 1.5 }]}>
+              {formatCurrency(item.rate)}
+            </Text>
+            <Text style={[pdfStyles.tableCellRight, { flex: 1.5 }]}>
+              {formatCurrency(item.taxableValue)}
+            </Text>
+            {!data.totals.isInterstate ? (
+              <>
+                <Text style={[pdfStyles.tableCellRight, { flex: 1 }]}>
+                  {formatCurrency(item.cgst)}
+                </Text>
+                <Text style={[pdfStyles.tableCellRight, { flex: 1 }]}>
+                  {formatCurrency(item.sgst)}
+                </Text>
+              </>
+            ) : (
+              <Text style={[pdfStyles.tableCellRight, { flex: 1 }]}>
+                {formatCurrency(item.igst)}
+              </Text>
+            )}
+            <Text style={[pdfStyles.tableCellRight, { flex: 1.5 }]}>
+              {formatCurrency(item.lineTotal)}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Totals Section */}
+      <View style={pdfStyles.totalsSection}>
+        <View style={pdfStyles.totalRow}>
+          <Text style={pdfStyles.totalLabel}>Subtotal:</Text>
+          <Text style={pdfStyles.totalValue}>{formatCurrency(data.totals.subtotal)}</Text>
+        </View>
+
+        {data.totals.cgstAmount > 0 && (
+          <View style={pdfStyles.totalRow}>
+            <Text style={pdfStyles.totalLabel}>CGST:</Text>
+            <Text style={pdfStyles.totalValue}>{formatCurrency(data.totals.cgstAmount)}</Text>
+          </View>
+        )}
+
+        {data.totals.sgstAmount > 0 && (
+          <View style={pdfStyles.totalRow}>
+            <Text style={pdfStyles.totalLabel}>SGST:</Text>
+            <Text style={pdfStyles.totalValue}>{formatCurrency(data.totals.sgstAmount)}</Text>
+          </View>
+        )}
+
+        {data.totals.igstAmount > 0 && (
+          <View style={pdfStyles.totalRow}>
+            <Text style={pdfStyles.totalLabel}>IGST:</Text>
+            <Text style={pdfStyles.totalValue}>{formatCurrency(data.totals.igstAmount)}</Text>
+          </View>
+        )}
+
+        <View style={pdfStyles.grandTotalRow}>
+          <Text style={pdfStyles.grandTotalLabel}>Grand Total:</Text>
+          <Text style={pdfStyles.grandTotalValue}>{formatCurrency(data.totals.grandTotal)}</Text>
+        </View>
+      </View>
+
+      {/* Terms and Conditions */}
+      {data.invoice.terms && (
+        <View style={pdfStyles.termsSection}>
+          <Text style={pdfStyles.termsTitle}>Terms and Conditions:</Text>
+          <Text style={pdfStyles.termsText}>{data.invoice.terms}</Text>
+        </View>
+      )}
+
+      {/* Footer */}
+      <View style={pdfStyles.footer}>
+        <Text>This is a computer-generated invoice and does not require a signature.</Text>
+        <Text>Generated on: {formatDate(new Date())}</Text>
+      </View>
+    </Page>
+  </Document>
+); */
+
+export class PDFEngine {
+  private static instance: PDFEngine;
+
+  static getInstance(): PDFEngine {
+    if (!PDFEngine.instance) {
+      PDFEngine.instance = new PDFEngine();
+    }
+    return PDFEngine.instance;
+  }
+
+  /**
+   * Generate PDF blob for download or email
+   */
+  async generatePDFBlob(data: InvoicePDFData): Promise<Blob> {
+    // Temporarily disabled for build testing
+    throw new Error('PDF generation temporarily disabled');
+    // const doc = <InvoicePDF data={data} />;
+    // const blob = await pdf(doc).toBlob();
+    // return blob;
+  }
+
+  /**
+   * Generate PDF buffer for server-side operations
+   */
+  async generatePDFBuffer(data: InvoicePDFData): Promise<Buffer> {
+    // Temporarily disabled for build testing
+    throw new Error('PDF generation temporarily disabled');
+    // const doc = <InvoicePDF data={data} />;
+    // const buffer = await pdf(doc).toBuffer();
+    // return buffer;
+  }
+
+  /**
+   * Generate PDF download link component
+   */
+  generateDownloadLink(data: InvoicePDFData, fileName?: string): React.ReactElement {
+    const defaultFileName = `invoice-${data.invoice.number}-${formatDate(data.invoice.issueDate)}.pdf`;
+
+    return (
+      <PDFDownloadLink
+        document={<InvoicePDF data={data} />}
+        fileName={fileName || defaultFileName}
+      >
+        {({ blob, url, loading, error }) =>
+          loading ? 'Generating PDF...' : 'Download PDF'
+        }
+      </PDFDownloadLink>
+    );
+  }
+
+  /**
+   * Validate PDF data completeness
+   */
+  validatePDFData(data: InvoicePDFData): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!data.company.name) errors.push('Company name is required');
+    if (!data.customer.name) errors.push('Customer name is required');
+    if (!data.invoice.number) errors.push('Invoice number is required');
+    if (!data.lineItems.length) errors.push('At least one line item is required');
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  /**
+   * Calculate optimal page breaks for long invoices
+   */
+  calculatePageBreaks(lineItems: any[]): number[] {
+    const itemsPerPage = 20; // Mathematical optimization based on A4 size
+    const pageBreaks: number[] = [];
+
+    for (let i = itemsPerPage; i < lineItems.length; i += itemsPerPage) {
+      pageBreaks.push(i);
+    }
+
+    return pageBreaks;
+  }
+}
+
+// Export singleton instance
+export const pdfEngine = PDFEngine.getInstance();
+
+// Utility functions for PDF operations
+export const pdfUtils = {
+  /**
+   * Convert blob to base64 for email attachments
+   */
+  blobToBase64: (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  },
+
+  /**
+   * Get PDF file size in human readable format
+   */
+  formatFileSize: (bytes: number): string => {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 Bytes';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  },
+
+  /**
+   * Generate PDF metadata
+   */
+  generateMetadata: (data: InvoicePDFData) => ({
+    title: `Invoice ${data.invoice.number}`,
+    author: data.company.name,
+    subject: `Tax Invoice for ${data.customer.name}`,
+    keywords: 'invoice, gst, tax, billing',
+    creator: 'Company Secretary ERP',
+    producer: 'React-PDF',
+  }),
+};

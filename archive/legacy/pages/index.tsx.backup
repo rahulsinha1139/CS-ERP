@@ -1,0 +1,223 @@
+/**
+ * Dashboard Home Page
+ * Main entry point for the ERP application
+ */
+
+import React from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '../src/components/ui/card';
+import { Button } from '../src/components/ui/button';
+import { formatCurrency } from '../src/lib/utils';
+import {
+  FileText,
+  Users,
+  DollarSign,
+  Calendar,
+  TrendingUp,
+  AlertCircle,
+  Plus,
+  ArrowRight
+} from 'lucide-react';
+
+export default function HomePage() {
+  // Mock data for demonstration
+  const stats = {
+    totalInvoices: 156,
+    totalRevenue: 2847500,
+    outstandingAmount: 485000,
+    overdueInvoices: 12,
+    thisMonthRevenue: 425000,
+    customersCount: 45,
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Company Secretary ERP</h1>
+            <p className="text-gray-600">Welcome to your business management dashboard</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/invoices/new">
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                New Invoice
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalInvoices}</p>
+                </div>
+                <FileText className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(stats.totalRevenue)}
+                  </p>
+                </div>
+                <DollarSign className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(stats.outstandingAmount)}
+                  </p>
+                </div>
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Customers</p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.customersCount}</p>
+                </div>
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/invoices">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Invoice Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  Create, manage, and track invoices with real-time GST calculations
+                </p>
+                <div className="flex items-center text-blue-600 font-medium">
+                  View Invoices <ArrowRight className="h-4 w-4 ml-2" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/payments">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  Payment Tracking
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  Track payments, reconcile accounts, and manage cash flow
+                </p>
+                <div className="flex items-center text-green-600 font-medium">
+                  View Payments <ArrowRight className="h-4 w-4 ml-2" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-75">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-orange-600" />
+                Compliance Calendar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                Track compliance deadlines and regulatory requirements
+              </p>
+              <div className="flex items-center text-orange-600 font-medium">
+                Coming Soon <ArrowRight className="h-4 w-4 ml-2" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Invoices</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Invoice INV240900{i}</p>
+                      <p className="text-sm text-gray-600">ABC Company Ltd.</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatCurrency(25000 * i)}</p>
+                      <p className="text-xs text-gray-500">DRAFT</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">This Month Revenue</span>
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(stats.thisMonthRevenue)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Overdue Invoices</span>
+                  <span className="font-medium text-red-600">{stats.overdueInvoices}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Average Collection</span>
+                  <span className="font-medium text-blue-600">28 days</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Growth Rate</span>
+                  <span className="font-medium text-purple-600 flex items-center gap-1">
+                    <TrendingUp className="h-4 w-4" />
+                    +12.5%
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

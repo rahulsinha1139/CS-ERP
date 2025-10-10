@@ -1,0 +1,301 @@
+
+> cs-erp-app@0.1.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+
+./pages/api/test-api.ts
+9:15  Warning: 'inferRouterInputs' is defined but never used.  @typescript-eslint/no-unused-vars
+9:34  Warning: 'inferRouterOutputs' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./pages/index.tsx
+12:11  Error: An empty interface declaration allows any non-nullish value, including literals like `0` and `""`.
+- If that's what you want, disable this lint rule with an inline comment or configure the 'allowInterfaces' rule option.
+- If you want a type meaning "any object", you probably want `object` instead.
+- If you want a type meaning "any value", you probably want `unknown` instead.  @typescript-eslint/no-empty-object-type
+35:39  Warning: '_props' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./pages/invoices/[id].tsx
+15:33  Warning: 'Download' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./pages/payments/new.tsx
+11:26  Warning: 'formatDate' is defined but never used.  @typescript-eslint/no-unused-vars
+37:38  Warning: 'invoicesLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+51:17  Warning: 'payment' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/customers/client-communication-setup.tsx
+68:14  Warning: '_data' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/customers/customer-dashboard-modern.tsx
+37:25  Warning: '_setInvoiceFilter' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+50:17  Warning: '_invoices' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/invoices/invoice-form.tsx
+54:11  Warning: 'ServiceTemplate' is defined but never used.  @typescript-eslint/no-unused-vars
+131:45  Warning: '_index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/payments/payment-tracker.tsx
+228:20  Error: 'Input' is not defined.  react/jsx-no-undef
+238:20  Error: 'Input' is not defined.  react/jsx-no-undef
+261:20  Error: 'Input' is not defined.  react/jsx-no-undef
+269:20  Error: 'Input' is not defined.  react/jsx-no-undef
+277:18  Error: 'Button' is not defined.  react/jsx-no-undef
+284:18  Error: 'Button' is not defined.  react/jsx-no-undef
+317:14  Error: 'Button' is not defined.  react/jsx-no-undef
+
+./src/components/settings/communication-setup-wizard.tsx
+17:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+22:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+51:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+193:35  Warning: 'watch' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+207:14  Warning: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+207:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+219:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+363:30  Warning: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+441:10  Warning: 'testResults' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+441:23  Warning: 'setTestResults' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+441:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+446:14  Warning: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+446:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+507:9  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+508:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/aura-header.tsx
+9:10  Warning: 'AuraButton' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/design-system.tsx
+128:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/label.tsx
+4:18  Error: An interface declaring no members is equivalent to its supertype.  @typescript-eslint/no-empty-object-type
+
+./src/components/ui/textarea.tsx
+4:18  Error: An interface declaring no members is equivalent to its supertype.  @typescript-eslint/no-empty-object-type
+
+./src/emails/invoice-professional.tsx
+109:3  Warning: 'primaryColor' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+110:3  Warning: 'accentColor' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/communication-engine.ts
+16:7  Warning: 'RESEND_API_KEY' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+40:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+48:14  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:17  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+84:13  Warning: 'domains' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+116:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+135:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+212:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+249:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+294:12  Warning: 'ivHex' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+317:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+380:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+444:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+560:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+562:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/compliance-engine.ts
+362:9  Error: 'totalCompletionTime' is never reassigned. Use 'const' instead.  prefer-const
+
+./src/lib/crm-engine.ts
+9:7  Warning: 'ENGAGEMENT_WEIGHT_DECAY' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+10:7  Warning: 'RISK_ASSESSMENT_FACTORS' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+11:7  Warning: 'SEGMENTATION_CLUSTERS' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+99:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+119:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+133:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+205:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+435:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+436:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+886:40  Warning: 'interactions' is defined but never used.  @typescript-eslint/no-unused-vars
+891:38  Warning: 'customers' is defined but never used.  @typescript-eslint/no-unused-vars
+891:68  Warning: 'timeframe' is defined but never used.  @typescript-eslint/no-unused-vars
+916:51  Warning: 'interactions' is defined but never used.  @typescript-eslint/no-unused-vars
+921:42  Warning: 'customers' is defined but never used.  @typescript-eslint/no-unused-vars
+921:72  Warning: 'timeframe' is defined but never used.  @typescript-eslint/no-unused-vars
+930:37  Warning: 'interactions' is defined but never used.  @typescript-eslint/no-unused-vars
+930:74  Warning: 'timeframe' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/file-storage.ts
+79:5  Warning: 'uploadedBy' is defined but never used.  @typescript-eslint/no-unused-vars
+191:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+324:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/gst-engine.test.ts
+205:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/gst-engine.ts
+7:10  Warning: 'Decimal' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/invoice-engine.test.ts
+309:44  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/invoice-engine.ts
+166:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+306:5  Warning: 'context' is defined but never used.  @typescript-eslint/no-unused-vars
+306:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/payment-reconciliation-engine.test.ts
+10:3  Warning: 'PaymentStatus' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/payment-reconciliation-engine.ts
+7:10  Warning: 'Decimal' is defined but never used.  @typescript-eslint/no-unused-vars
+12:7  Warning: 'BULK_PROCESSING_BATCH_SIZE' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+52:29  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+621:5  Warning: 'tolerance' is defined but never used.  @typescript-eslint/no-unused-vars
+698:5  Warning: 'processedIds' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/performance-utils.ts
+26:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+26:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+32:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+44:17  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+51:10  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:29  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/practice-assistant.ts
+59:14  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+61:75  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+61:85  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/recurring-engine.ts
+30:29  Warning: 'formatStr' is defined but never used.  @typescript-eslint/no-unused-vars
+42:10  Warning: 'emailEngine' is defined but never used.  @typescript-eslint/no-unused-vars
+230:15  Warning: 'calculatedInvoice' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+359:7  Warning: 'elapsed' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/utils.ts
+53:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+79:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+191:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+191:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/pages/communication-setup.tsx
+47:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+58:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+101:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+180:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/api/root.ts
+12:10  Warning: 'complianceRouter' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/server/api/routers/communication.ts
+11:8  Warning: 'ComplianceReminderEmail' is defined but never used.  @typescript-eslint/no-unused-vars
+145:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+151:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+599:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+620:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/api/routers/company.ts
+70:21  Warning: 'ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+86:24  Warning: 'ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+112:24  Warning: 'ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/server/api/routers/compliance.ts
+74:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+119:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+188:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+197:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+199:87  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+270:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+339:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+426:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/api/routers/customer.ts
+10:10  Warning: 'Prisma' is defined but never used.  @typescript-eslint/no-unused-vars
+58:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+262:11  Error: 'whereClause' is never reassigned. Use 'const' instead.  prefer-const
+262:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+380:11  Error: 'dateFilter' is never reassigned. Use 'const' instead.  prefer-const
+380:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+445:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/api/routers/invoice.ts
+62:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+341:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+431:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+575:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/api/routers/payment.ts
+30:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/server/api/routers/service.ts
+11:50  Warning: '_ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+16:56  Warning: '_ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+70:26  Warning: '_ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+92:29  Warning: '_ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/server/api/trpc.ts
+44:41  Warning: 'opts' is defined but never used.  @typescript-eslint/no-unused-vars
+97:45  Warning: 'ctx' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/server/auth.ts
+3:16  Warning: '_db' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/testing/e2e-workflow.test.ts
+9:7  Warning: 'mockDatabase' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+10:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+11:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+12:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+240:13  Warning: 'authFlow' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+264:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+276:13  Warning: 'emailData' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+298:13  Warning: 'whatsappMessage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/testing/master-test-suite.ts
+28:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+30:8  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+254:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+318:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+387:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+452:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+468:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+484:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+514:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+515:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+516:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+517:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+611:40  Warning: 'amount' is defined but never used.  @typescript-eslint/no-unused-vars
+627:40  Warning: 'username' is defined but never used.  @typescript-eslint/no-unused-vars
+627:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+627:55  Warning: 'password' is defined but never used.  @typescript-eslint/no-unused-vars
+627:65  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+631:43  Warning: 'scenario' is defined but never used.  @typescript-eslint/no-unused-vars
+631:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+644:63  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+645:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+646:51  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+647:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+648:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+649:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+650:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+651:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+652:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+653:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+654:53  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+655:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+656:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+657:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+658:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/testing/performance-testing.ts
+248:16  Warning: '_op' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+263:16  Warning: '_query' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+383:13  Warning: '_total' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/testing/security-testing.ts
+452:34  Warning: '_payload' is defined but never used.  @typescript-eslint/no-unused-vars
+458:36  Warning: '_payload' is defined but never used.  @typescript-eslint/no-unused-vars
+463:38  Warning: '_payload' is defined but never used.  @typescript-eslint/no-unused-vars
+468:31  Warning: '_payload' is defined but never used.  @typescript-eslint/no-unused-vars
+473:34  Warning: '_payload' is defined but never used.  @typescript-eslint/no-unused-vars
+543:56  Warning: 'tamperedGST' is defined but never used.  @typescript-eslint/no-unused-vars
+549:40  Warning: 'stateTest' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
