@@ -1,0 +1,62 @@
+{
+  "timestamp": "2025-09-25T14:57:39.089Z",
+  "analysis": {
+    "overallGrade": "A",
+    "averageTime": 440,
+    "recommendations": [
+      "🔧 Optimize slow pages:",
+      "   • Invoices List: 698ms - Consider lazy loading, code splitting",
+      "   • New Invoice Form: 850ms - Consider lazy loading, code splitting",
+      "🔧 Optimize slow APIs:",
+      "   • Customer List API: 461ms - Add caching, optimize queries",
+      "   • Invoice Stats API: 463ms - Add caching, optimize queries",
+      "💡 GOOD: Performance is acceptable, minor improvements possible",
+      "   • Fine-tune caching strategies",
+      "   • Consider CDN for static assets"
+    ]
+  },
+  "pageResults": [
+    {
+      "page": "Invoices List",
+      "avgTime": 698,
+      "grade": "B"
+    },
+    {
+      "page": "New Invoice Form",
+      "avgTime": 850,
+      "grade": "B"
+    },
+    {
+      "page": "New Payment Form",
+      "avgTime": 451,
+      "grade": "A"
+    },
+    {
+      "page": "Customers List",
+      "avgTime": 327,
+      "grade": "A"
+    }
+  ],
+  "apiResults": [
+    {
+      "endpoint": "Customer List API",
+      "responseTime": 461,
+      "grade": "B"
+    },
+    {
+      "endpoint": "Invoice Stats API",
+      "responseTime": 463,
+      "grade": "B"
+    },
+    {
+      "endpoint": "Payment List API",
+      "responseTime": 190,
+      "grade": "A"
+    },
+    {
+      "endpoint": "Service List API",
+      "responseTime": 77,
+      "grade": "A+"
+    }
+  ]
+}
