@@ -341,7 +341,7 @@ export const DynamicLineItemBuilder: React.FC<DynamicLineItemBuilderProps> = ({
       {/* Action Buttons */}
       <div className="flex gap-3 justify-end">
         {onCancel && (
-          <AuraButton type="button" variant="ghost" onClick={onCancel}>
+          <AuraButton type="button" variant="secondary" onClick={onCancel}>
             Cancel
           </AuraButton>
         )}

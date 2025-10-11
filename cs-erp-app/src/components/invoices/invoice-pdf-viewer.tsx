@@ -37,6 +37,7 @@ interface InvoicePDFViewerProps {
       gstin?: string;
       stateCode?: string;
       phone?: string;
+      pan?: string;
     };
     company: {
       name: string;

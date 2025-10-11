@@ -171,7 +171,7 @@ function InvoiceForm({ invoiceId, initialCustomerId, onSuccess, onCancel }: Invo
         amount: line.quantity * line.rate,
         gstRate: line.gstRate || 0,
         isReimbursement: line.isReimbursement || false,
-        companyStateCode: company.stateCode,
+        companyStateCode: company.stateCode || '27', // Default to Maharashtra if not set
         customerStateCode: selectedCustomer?.stateCode ?? undefined,
         placeOfSupply: placeOfSupply,
       });

@@ -338,7 +338,7 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
       line-height: 1.5;
       color: #000;
       background: white;
-      padding: 15mm 20mm;
+      padding: 15mm 20mm 25mm 20mm;
     }
 
     .container {
@@ -552,10 +552,11 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     /* Footer */
     .footer {
       margin-top: 60px;
-      padding-top: 15px;
+      padding: 15px 0 20px 0;
       border-top: 4px solid #8B0000;
       text-align: center;
       font-size: 10pt;
+      line-height: 1.8;
       color: #333;
       page-break-inside: avoid;
     }
@@ -592,12 +593,6 @@ const generatePragnyaHTML = (data: PragnyaInvoicePDFData): string => {
     </div>
 
     <div class="header-line"></div>
-
-    <!-- Company Contact Info -->
-    <div class="company-contact">
-      ${data.company.address}<br>
-      ${data.company.phone ? `Mob: ${data.company.phone}` : ''}${data.company.email ? ` Email id: ${data.company.email}` : ''}
-    </div>
 
     <!-- Invoice Number and Date -->
     <div class="invoice-row">
