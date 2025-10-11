@@ -64,9 +64,12 @@ const PaymentTracker = React.memo(function PaymentTracker({ customerId, invoiceI
     customerId,
   });
 
+  // Utilities for invalidating queries
+  const utils = api.useUtils();
+
   // Mutations
   const recordPaymentMutation = api.payment.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       addNotification({
         type: 'success',
         title: 'Payment Recorded',
@@ -74,7 +77,18 @@ const PaymentTracker = React.memo(function PaymentTracker({ customerId, invoiceI
       });
       form.reset();
       setShowForm(false);
-      refetch();
+      // Refresh all related data
+      await Promise.all([
+        refetch(),
+        utils.payment.getStats.invalidate(),
+        utils.invoice.getAll.invalidate(),
+        utils.invoice.getUnpaid.invalidate(),
+        utils.payment.getRecent.invalidate(),
+      ]);
+      // Trigger page refresh to update dashboard
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('payment-recorded'));
+      }
     },
     onError: (error) => {
       addNotification({

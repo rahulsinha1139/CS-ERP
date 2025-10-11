@@ -127,7 +127,7 @@ export default function LoginPage() {
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                    <Mail className="h-5 w-5 text-blue-300/50" />
+                    <Mail className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     id="email"
@@ -137,7 +137,7 @@ export default function LoginPage() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-12 pr-4 text-white placeholder-blue-300/30 backdrop-blur-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full rounded-xl border border-blue-300/30 bg-white py-3 pl-12 pr-4 text-gray-900 placeholder-gray-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     placeholder="admin@pragnyapradhan.com"
                   />
                 </div>
@@ -150,7 +150,7 @@ export default function LoginPage() {
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                    <Lock className="h-5 w-5 text-blue-300/50" />
+                    <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     id="password"
@@ -160,13 +160,13 @@ export default function LoginPage() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-12 pr-12 text-white placeholder-blue-300/30 backdrop-blur-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full rounded-xl border border-blue-300/30 bg-white py-3 pl-12 pr-12 text-gray-900 placeholder-gray-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-300/50 hover:text-blue-300 transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -232,6 +232,17 @@ export default function LoginPage() {
             transform: translateY(-20px) translateX(10px);
             opacity: 0.6;
           }
+        }
+
+        /* Override browser autofill yellow background */
+        :global(input:-webkit-autofill),
+        :global(input:-webkit-autofill:hover),
+        :global(input:-webkit-autofill:focus),
+        :global(input:-webkit-autofill:active) {
+          -webkit-box-shadow: 0 0 0 1000px white inset !important;
+          -webkit-text-fill-color: #111827 !important;
+          box-shadow: 0 0 0 1000px white inset !important;
+          transition: background-color 5000s ease-in-out 0s;
         }
       `}</style>
     </div>

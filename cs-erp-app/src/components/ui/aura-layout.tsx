@@ -95,11 +95,21 @@ const AuraLayout: React.FC<AuraLayoutProps> = ({
   breadcrumbs,
   navigationItems = defaultNavigationItems,
   companyName = "CS ERP",
-  companyLogo,
+  companyLogo = (
+    <img
+      src="/images/company-logo.png"
+      alt="Company Logo"
+      className="w-10 h-10 object-contain"
+      onError={(e) => {
+        // Fallback if logo doesn't load
+        e.currentTarget.style.display = 'none';
+      }}
+    />
+  ),
   className,
   contentClassName,
-  userEmail = "Mrs. Pragnya Pradhan",
-  userName = "pragnya@pradhanassociates.com",
+  userEmail = "pragnyap.pradhan@gmail.com",
+  userName = "Mrs. Pragnya Pradhan",
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 

@@ -43,7 +43,9 @@ export class PDFMerger {
       for (const source of sources) {
         try {
           const pdfBytes = await this.loadPDFBytes(source);
-          const sourcePdf = await PDFDocument.load(pdfBytes);
+          const sourcePdf = await PDFDocument.load(pdfBytes, {
+            ignoreEncryption: true
+          });
 
           // Copy all pages from source PDF
           const copiedPages = await mergedPdf.copyPages(

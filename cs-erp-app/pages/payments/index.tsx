@@ -46,6 +46,13 @@ export default function PaymentsPage() {
 
   const headerActions = (
     <div className="flex items-center gap-2">
+      <AuraButton
+        variant="primary"
+        onClick={() => window.location.href = '/payments/new'}
+        icon={<DollarSign className="h-4 w-4" />}
+      >
+        Record Payment
+      </AuraButton>
       <AuraButton variant="secondary" onClick={handleExportPayments} icon={<Download className="h-4 w-4" />}>
         Export
       </AuraButton>

@@ -55,9 +55,12 @@ export class EmailEngine {
   private resend: Resend;
   private fromEmail: string;
 
+  private replyToEmail: string;
+
   private constructor() {
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.FROM_EMAIL;
+    const replyToEmail = process.env.REPLY_TO_EMAIL;
 
     if (!apiKey) {
       throw new Error('RESEND_API_KEY environment variable is required');
@@ -69,6 +72,7 @@ export class EmailEngine {
 
     this.resend = new Resend(apiKey);
     this.fromEmail = fromEmail;
+    this.replyToEmail = replyToEmail || fromEmail; // Fallback to fromEmail if not set
   }
 
   static getInstance(): EmailEngine {
@@ -104,7 +108,7 @@ export class EmailEngine {
             content: att.content as string | Buffer,
             content_type: att.contentType,
           })),
-          replyTo: options.replyTo,
+          replyTo: options.replyTo || this.replyToEmail, // Use configured reply-to if not specified
           tags: options.tags,
         });
 

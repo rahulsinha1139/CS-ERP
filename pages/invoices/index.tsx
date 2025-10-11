@@ -180,6 +180,17 @@ export default function InvoicesPage() {
           lineTotal: line.amount,
           gstRate: line.gstRate,
           hsnSac: line.hsnSac || '',
+          // Custom service columns support
+          serviceType: line.serviceType,
+          details: line.serviceData?.rows || undefined,
+          subtotals: line.serviceData ? {
+            govtFees: line.serviceData.totalGovtFees,
+            professionalFees: line.serviceData.totalProfessionalFees,
+            totalFees: line.serviceData.totalFees,
+            totalHours: line.serviceData.totalHours,
+            totalPages: line.serviceData.totalPages,
+            totalDocuments: line.serviceData.totalDocuments,
+          } : undefined,
         })),
         totals: {
           subtotal: invoice.subtotal,
