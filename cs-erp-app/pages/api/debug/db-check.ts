@@ -4,7 +4,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/server/db';
+import { db } from '@/server/db';
 
 export default async function handler(
   req: NextApiRequest,
@@ -27,14 +27,14 @@ export default async function handler(
     }
 
     // Try to connect to database
-    await prisma.$connect();
+    await db.$connect();
 
     // Try a simple query
-    const companyCount = await prisma.company.count();
-    const customerCount = await prisma.customer.count();
-    const invoiceCount = await prisma.invoice.count();
+    const companyCount = await db.company.count();
+    const customerCount = await db.customer.count();
+    const invoiceCount = await db.invoice.count();
 
-    await prisma.$disconnect();
+    await db.$disconnect();
 
     return res.status(200).json({
       success: true,
