@@ -60,8 +60,43 @@ export const companyRouter = createTRPCRouter({
   }),
 
   // Get current company (for CS practice)
-  getCurrent: protectedProcedure.query(async () => {
-    return getCurrentCompanyData();
+  getCurrent: protectedProcedure.query(async ({ ctx }) => {
+    // Fetch actual company from database using the session's companyId
+    const company = await ctx.db.company.findFirst({
+      where: {
+        id: ctx.session.user.companyId,
+      },
+    });
+
+    // Return company data with all fields needed for PDF generation
+    if (company) {
+      return {
+        id: company.id,
+        name: company.name || 'PRAGNYA PRADHAN & ASSOCIATES',
+        email: company.email || 'pragnyap.pradhan@gmail.com',
+        phone: company.phone || '+91 9953457413',
+        address: company.address || '46, LGF, JOR BAGH, New Delhi-110003',
+        gstin: company.gstin || '',
+        stateCode: company.stateCode || '07',
+        pan: company.pan || 'AMEPP4323R',
+        website: company.website || '',
+        logo: company.logo || '/images/company-logo.png',
+      };
+    }
+
+    // Fallback to Pragnya Pradhan's details if company not found
+    return {
+      id: ctx.session.user.companyId,
+      name: 'PRAGNYA PRADHAN & ASSOCIATES',
+      email: 'pragnyap.pradhan@gmail.com',
+      phone: '+91 9953457413',
+      address: '46, LGF, JOR BAGH, New Delhi-110003',
+      gstin: '',
+      stateCode: '07',
+      pan: 'AMEPP4323R',
+      website: '',
+      logo: '/images/company-logo.png',
+    };
   }),
 
   // Get company by ID (with fallback)

@@ -15,16 +15,10 @@ interface DashboardPageProps {
   [key: string]: never; // Explicitly empty interface
 }
 
-// Icons for Aura buttons
+// Icons for buttons
 const PlusIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-  </svg>
-)
-
-const SparkleIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
   </svg>
 )
 
@@ -43,14 +37,6 @@ export default function DashboardPage(_props: DashboardPageProps) {
 
   const headerActions = (
     <div className="flex items-center space-x-3">
-      <AuraButton
-        variant="tertiary"
-        size="sm"
-        icon={<SparkleIcon />}
-        onClick={() => router.push('/aura-demo')}
-      >
-        Aura Demo
-      </AuraButton>
       <AuraButton
         variant="secondary"
         size="sm"
