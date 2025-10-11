@@ -68,8 +68,8 @@ export default async function handler(
       });
     }
 
-    // Create session
-    await createSession(user.id, user.email, user.companyId);
+    // Create session (pass req and res for Pages Router compatibility)
+    await createSession(user.id, user.email, user.companyId, req, res);
 
     // Reset rate limit on successful login
     resetRateLimit(rateLimitKey);

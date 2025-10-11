@@ -27,8 +27,8 @@ export default async function handler(
   }
 
   try {
-    // Destroy session
-    await destroySession();
+    // Destroy session (pass req and res for Pages Router compatibility)
+    await destroySession(req, res);
 
     return res.status(200).json({
       success: true,

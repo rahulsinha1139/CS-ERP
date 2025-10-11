@@ -28,21 +28,28 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
  */
 interface CreateContextOptions {
   companyId?: string;
+  req?: any;
+  res?: any;
 }
 
 const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     db,
     companyId: opts.companyId,
+    req: opts.req,
+    res: opts.res,
   };
 };
 
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   // Get session from iron-session (real authentication)
-  const session = await getSession();
+  // Pass req and res for Pages Router compatibility
+  const session = await getSession(opts.req, opts.res);
 
   return createInnerTRPCContext({
     companyId: session?.companyId,
+    req: opts.req,
+    res: opts.res,
   });
 };
 
@@ -94,8 +101,8 @@ export const publicProcedure = t.procedure.use(performanceTrackingMiddleware);
  * Rejects the request with an 'UNAUTHORIZED' error if the user is not signed in.
  */
 const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
-  // Get real session from iron-session
-  const session = await getSession();
+  // Get real session from iron-session (pass req/res from context)
+  const session = await getSession(ctx.req, ctx.res);
 
   if (!session || !session.isAuthenticated) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -112,6 +119,8 @@ const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
         },
       },
       companyId: session.companyId,
+      req: ctx.req,
+      res: ctx.res,
     },
   });
 });
