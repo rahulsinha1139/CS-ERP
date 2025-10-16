@@ -1,8 +1,21 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import isDev from 'electron-is-dev';
+import { createIPCHandler } from 'trpc-electron/main';
 
-function createWindow() {
+// Import the tRPC router
+import { appRouter } from '../src/server/api/root';
+import { db } from '../src/server/api/trpc';
+
+// Default admin user for Electron single-user mode
+const ADMIN_USER = {
+  id: 'user_admin_001',
+  email: 'admin@pragnyapradhan.com',
+  companyId: 'c1ad463d-13a4-4b11-9a4f-a8ab5d3c979b', // Actual UUID from database
+  name: 'Pragnya Pradhan',
+};
+
+function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -22,9 +35,38 @@ function createWindow() {
   if (isDev) {
     win.webContents.openDevTools();
   }
+
+  return win;
 }
 
-app.whenReady().then(createWindow);
+// Set up tRPC IPC handler
+app.whenReady().then(() => {
+  // Create window first to get instance
+  const mainWindow = createWindow();
+
+  // Create tRPC IPC handler for Electron
+  createIPCHandler({
+    router: appRouter,
+    windows: [mainWindow],
+    createContext: async () => {
+      // For Electron single-user mode, automatically authenticate as admin
+      // This eliminates the need for login in desktop app
+      return {
+        db,
+        companyId: ADMIN_USER.companyId,
+        session: {
+          user: {
+            id: ADMIN_USER.id,
+            email: ADMIN_USER.email,
+            companyId: ADMIN_USER.companyId,
+          },
+        },
+        req: null,
+        res: null,
+      };
+    },
+  });
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

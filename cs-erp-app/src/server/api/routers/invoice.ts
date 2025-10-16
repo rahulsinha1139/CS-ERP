@@ -166,8 +166,8 @@ export const invoiceRouter = createTRPCRouter({
 
       if (filters?.search) {
         whereClause.OR = [
-          { number: { contains: filters.search, mode: 'insensitive' } },
-          { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
+          { number: { contains: filters.search } },
+          { customer: { name: { contains: filters.search } } },
         ];
       }
 
@@ -640,8 +640,8 @@ export const invoiceRouter = createTRPCRouter({
 
       if (filters?.search) {
         whereClause.OR = [
-          { number: { contains: filters.search, mode: 'insensitive' } },
-          { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
+          { number: { contains: filters.search } },
+          { customer: { name: { contains: filters.search } } },
         ];
       }
 

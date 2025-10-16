@@ -70,8 +70,8 @@ export const customerRouter = createTRPCRouter({
       const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.companyId };
       if (search) {
         whereClause.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search } },
+          { email: { contains: search } },
         ];
       }
 
@@ -457,8 +457,8 @@ export const customerRouter = createTRPCRouter({
       const whereClause: Prisma.CustomerWhereInput = { companyId: ctx.companyId };
       if (search) {
         whereClause.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search } },
+          { email: { contains: search } },
         ];
       }
 
