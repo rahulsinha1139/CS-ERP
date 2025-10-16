@@ -8,7 +8,7 @@
     "dev": "next dev -p 3005",
     "build": "next build",
     "build:next": "next build && next export -o dist/renderer",
-    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:electron": "node build-electron.js",
     "start:electron": "npm run build:electron && electron .",
     "dev:electron": "concurrently \"npm:dev\" \"wait-on http://localhost:3005 && npm:start:electron\"",
     "package": "npm run build:next && npm run build:electron && electron-builder",
@@ -85,6 +85,7 @@
     "concurrently": "^9.2.1",
     "electron": "^38.3.0",
     "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.11",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "postcss": "^8.5.6",
@@ -99,10 +100,16 @@
     "appId": "com.pragnyapradhan.cserp",
     "productName": "CS Practice ERP",
     "files": [
-      "dist/**/*",
-      "node_modules/**/*",
+      "dist/electron/main.js",
+      "dist/electron/preload.js",
+      ".next/standalone/**/*",
+      ".next/static/**/*",
+      "public/**/*",
       "prisma/**/*",
-      "package.json"
+      "uploads/**/*",
+      ".env.production",
+      "package.json",
+      "!node_modules/**/*"
     ],
     "directories": {
       "buildResources": "assets",
@@ -111,8 +118,37 @@
     "extraResources": [
       {
         "from": "prisma/prod.db",
-        "to": "prod.db"
+        "to": "prisma/prod.db"
+      },
+      {
+        "from": "uploads",
+        "to": "uploads"
+      },
+      {
+        "from": ".env.production",
+        "to": ".env"
       }
-    ]
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sqlite3/**/*",
+      "node_modules/canvas/**/*",
+      "node_modules/@prisma/engines/**/*",
+      "prisma/**/*",
+      "uploads/**/*"
+    ],
+    "win": {
+      "target": [{"target": "nsis", "arch": ["x64"]}],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CS Practice ERP",
+      "differentialPackage": false
+    },
+    "compression": "normal"
   }
 }

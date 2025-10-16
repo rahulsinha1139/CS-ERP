@@ -16,6 +16,44 @@ const ADMIN_USER = {
   name: 'Pragnya Pradhan',
 };
 
+// Start Next.js server in production
+let nextServer: any = null;
+
+async function startNextServer() {
+  if (isDev) return; // Use dev server in development
+
+  // In production, use the standalone server
+  // Standalone server is at .next/standalone/cs-erp-app/server.js
+  const { spawn } = require('child_process');
+
+  const standalonePath = path.join(__dirname, '../../.next/standalone/cs-erp-app/server.js');
+
+  console.log('🚀 Starting standalone Next.js server...');
+  console.log('📁 Server path:', standalonePath);
+
+  // Spawn the standalone server as a child process
+  const serverProcess = spawn('node', [standalonePath], {
+    env: {
+      ...process.env,
+      PORT: '3005',
+      HOSTNAME: 'localhost',
+    },
+    stdio: 'inherit',
+  });
+
+  serverProcess.on('error', (error) => {
+    console.error('❌ Failed to start Next.js server:', error);
+  });
+
+  // Wait for server to be ready
+  await new Promise<void>((resolve) => {
+    setTimeout(() => {
+      console.log('✅ Next.js standalone server started on http://localhost:3005');
+      resolve();
+    }, 2000); // Give it 2 seconds to start
+  });
+}
+
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1200,
@@ -27,11 +65,8 @@ function createWindow(): BrowserWindow {
     },
   });
 
-  const url = isDev
-    ? 'http://localhost:3005' // Your Next.js dev server
-    : `file://${path.join(__dirname, '../renderer/out/index.html')}`;
-
-  win.loadURL(url);
+  // Always use localhost - Next.js server runs in both dev and prod
+  win.loadURL('http://localhost:3005');
 
   if (isDev) {
     win.webContents.openDevTools();
@@ -45,6 +80,9 @@ app.whenReady().then(async () => {
   // Initialize file storage directories
   await fileStorage.initialize();
   console.log('✅ File storage initialized');
+
+  // Start Next.js server in production mode
+  await startNextServer();
 
   // Create window first to get instance
   const mainWindow = createWindow();
@@ -74,6 +112,11 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
+  // Close Next.js server
+  if (nextServer) {
+    nextServer.close();
+  }
+
   if (process.platform !== 'darwin') {
     app.quit();
   }

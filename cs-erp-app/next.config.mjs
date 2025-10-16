@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: false,
 
+  // Standalone output for Electron - minimal server with only runtime dependencies
+  output: 'standalone',
+
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
