@@ -10,6 +10,7 @@ const main_1 = require("trpc-electron/main");
 // Import the tRPC router
 const root_1 = require("../src/server/api/root");
 const trpc_1 = require("../src/server/api/trpc");
+const file_storage_1 = require("../src/lib/file-storage");
 // Default admin user for Electron single-user mode
 const ADMIN_USER = {
     id: 'user_admin_001',
@@ -37,7 +38,10 @@ function createWindow() {
     return win;
 }
 // Set up tRPC IPC handler
-electron_1.app.whenReady().then(() => {
+electron_1.app.whenReady().then(async () => {
+    // Initialize file storage directories
+    await file_storage_1.fileStorage.initialize();
+    console.log('✅ File storage initialized');
     // Create window first to get instance
     const mainWindow = createWindow();
     // Create tRPC IPC handler for Electron
