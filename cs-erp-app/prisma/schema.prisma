@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Company {
@@ -287,7 +286,7 @@ model ComplianceItem {
   applicableAct   String?
   penalty         Float?
   completionNotes String?
-  attachments     String[]             @default([])
+  attachments     Json?
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
   templateId      String?
@@ -317,8 +316,8 @@ model ComplianceTemplate {
   applicableAct  String?
   estimatedCost  Float?              @default(0)
   instructions   String?
-  checklist      String[]            @default([])
-  requiredDocs   String[]            @default([])
+  checklist      Json?
+  requiredDocs   Json?
   isActive       Boolean             @default(true)
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
@@ -335,7 +334,7 @@ model ComplianceActivity {
   description  String
   performedBy  String?
   activityDate DateTime       @default(now())
-  attachments  String[]       @default([])
+  attachments  Json?
   createdAt    DateTime       @default(now())
   compliance   ComplianceItem @relation(fields: [complianceId], references: [id], onDelete: Cascade)
 
@@ -481,7 +480,7 @@ model MessageTemplate {
   subject     String?
   htmlContent String?
   textContent String
-  variables   String[]             @default([])
+  variables   Json?
   isActive    Boolean              @default(true)
   isDefault   Boolean              @default(false)
   createdAt   DateTime             @default(now())
