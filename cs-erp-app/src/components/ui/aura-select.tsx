@@ -35,7 +35,7 @@ const AuraSelect = React.forwardRef<HTMLSelectElement, AuraSelectProps>(
               "focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "transition-all duration-200 appearance-none cursor-pointer",
-              icon && "pl-10",
+              icon && "pl-11",
               error && "border-red-300 focus:border-red-400 focus:ring-red-500/20",
               className
             )}
